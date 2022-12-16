@@ -1,3 +1,10 @@
+'''
+This file performs the Gauss Newton Algorithm on the 1d Poisson Equation with PINN
+It uses damping factor of 0, random seed 20 and number of iterations = 7000
+It solves the outputs in the results repo
+
+'''
+
 import os
 import numpy as np
 from matplotlib import pyplot as plt
