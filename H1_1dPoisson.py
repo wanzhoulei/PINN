@@ -1,6 +1,6 @@
 '''
-This file performs the Gauss Newton Algorithm on the 1d Poisson Equation with PINN
-It uses damping factor of 0, random seed 20 and number of iterations = 7000
+This file performs the H1 norm GD Algorithm on the 1d Poisson Equation with PINN
+It uses damping factor of 0, random seed 20 and number of iterations = 3000
 It solves the outputs in the results repo
 
 '''
