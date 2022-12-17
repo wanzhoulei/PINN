@@ -1,6 +1,6 @@
 '''
 This file performs the H^-1 norm GD Algorithm on the 1d Poisson Equation with PINN
-It uses damping factor of 0, random seed 20 and number of iterations = 3000
+It uses damping factor of 0, random seed 20 and number of iterations = 5000
 It solves the outputs in the results repo
 
 '''
@@ -14,7 +14,7 @@ import scipy.optimize
 
 
 ##change the number of iterations, damping coeff alpha and random seed here if needed
-n_iter = 3000; alpha=0
+n_iter = 5000; alpha=0
 random_seed = 20 #set the random seed for generating the initial parameters of PINN
 
 N_f = 1000 #Total number of collocation points 
