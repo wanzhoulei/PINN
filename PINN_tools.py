@@ -328,15 +328,20 @@ def L2Kernel(PINN, alpha=1):
     return func
 
 ## Kernel Functions for H1, H-1, H1 semi, H-1 semi
+def Cn(N):
+    C = np.zeros((N+2, N+2))
+    for i in range(1, N+1):
+        C[i][i-1] = -1
+        C[i][i+1] = 1
+    C[0][1] = 1; C[-1][-2] = -1
+    dx = 2*np.pi/(N+1)
+    C = (1/(2*dx))*C
+    return C
+
 #this function returns the discretized negative laplacian operator
 def NegLaplacian(N):
-    A = 2*np.eye(N+2)
-    for i in range(1, N+1):
-        A[i][i-1] = -1
-        A[i][i+1] = -1
-    A[0][1] = -2; A[-1][-2] = -2
-    h = 2*np.pi/(N+1)
-    return (1/h**2)*A
+    C = Cn(N)
+    return C.T @ C
 
 def H1Kernel(PINN, N, X_f_train, L, alpha=0):
     def func(X):
