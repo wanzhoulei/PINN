@@ -1,7 +1,7 @@
 '''
 This file performs the Gauss Newton Algorithm on the 1d Poisson Equation with PINN
 It uses damping factor of 0, random seed 20 and number of iterations = 7000
-It solves the outputs in the results repo
+It solves the outputs in the results folder
 
 '''
 
@@ -41,7 +41,7 @@ results = scipy.optimize.minimize(fun = PINN.optimizerfunc,
                                             })
 e = time.time()
 print("Entire time: {}".format(e-s))
-print("CPU time each iteration: {}".format((e-s)/2000))
+print("CPU time each iteration: {}".format((e-s)/n_iter))
 
 #build the result folder if not exists
 mydir = ("results")
