@@ -14,7 +14,7 @@ import scipy.optimize
 
 
 ##change the number of iterations, damping coeff alpha and random seed here if needed
-n_iter = 10; alpha=0
+n_iter = 3000; alpha=0
 random_seed = 20 #set the random seed for generating the initial parameters of PINN
 
 N_f = 1000 #Total number of collocation points 
