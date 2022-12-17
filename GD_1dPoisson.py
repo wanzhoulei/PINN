@@ -1,6 +1,6 @@
 '''
 This file does the std Gradient Descent Algorithm on the PINN
-using 80000 iterations and random seed 20 to initialize the PINN parameters
+using 100000 iterations and random seed 20 to initialize the PINN parameters
 The outputs are saved in the results folder
 
 '''
@@ -14,7 +14,7 @@ import time
 import scipy.optimize
 
 ##change the number of iterations or random seed here if needed
-n_iter = 80000
+n_iter = 100000
 random_seed = 20 #set the random seed for generating the initial parameters of PINN
 
 N_f = 1000 #Total number of collocation points 
