@@ -7,8 +7,11 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # or any {'0', '1', '2'},
 #0 (default) shows all, 1 to filter out INFO logs, 2 to additionally filter out WARNING logs, and 3 to additionally filter out ERROR logs
 import scipy.optimize
 import scipy.io
+import scipy.sparse as sp
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import matplotlib.colors as colors
 import matplotlib.ticker
 import time
 from pyDOE import lhs         #Latin Hypercube Sampling
@@ -389,10 +392,14 @@ def L2Kernel(PINN, X_f_train, alpha=1):
 
 ##plotting methods
 def solutionplot(u_pred, usol, savepath=None):
+    #color map
+    cmap = cm.get_cmap('jet')
+    normalize = colors.Normalize(vmin=-1, vmax=1)
+    
     #Ground truth
     fig_1 = plt.figure(1, figsize=(18, 5))
     plt.subplot(1, 3, 1)
-    plt.pcolor(x_1, x_2, usol, cmap='jet')
+    plt.pcolor(x_1, x_2, usol, cmap=cmap, norm=normalize)
     plt.colorbar()
     plt.xlabel(r'$x_1$', fontsize=18)
     plt.ylabel(r'$x_2$', fontsize=18)
@@ -400,7 +407,7 @@ def solutionplot(u_pred, usol, savepath=None):
 
     # Prediction
     plt.subplot(1, 3, 2)
-    plt.pcolor(x_1, x_2, u_pred, cmap='jet')
+    plt.pcolor(x_1, x_2, u_pred, cmap=cmap, norm=normalize)
     plt.colorbar()
     plt.xlabel(r'$x_1$', fontsize=18)
     plt.ylabel(r'$x_2$', fontsize=18)
@@ -408,13 +415,12 @@ def solutionplot(u_pred, usol, savepath=None):
 
     # Error
     plt.subplot(1, 3, 3)
-    plt.pcolor(x_1, x_2, np.abs(usol - u_pred), cmap='jet')
+    plt.pcolor(x_1, x_2, abs(u_pred - usol), cmap='jet')
     plt.colorbar()
     plt.xlabel(r'$x_1$', fontsize=18)
     plt.ylabel(r'$x_2$', fontsize=18)
-    plt.title(r'Absolute error $|u(x_1,x_2)- \hat u(x_1,x_2)|$', fontsize=15)
+    plt.title(r'Absolute error $ | \hat u(x_1,x_2) - u(x_1,x_2) | $', fontsize=15)
     plt.tight_layout()
     
     if savepath is not None:
         plt.savefig(savepath, dpi = 500, bbox_inches='tight')
-
