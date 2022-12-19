@@ -41,7 +41,7 @@ results = scipy.optimize.minimize(fun = PINN.optimizerfunc,
                                             })
 e = time.time()
 print("Entire time: {}".format(e-s))
-print("CPU time each iteration: {}".format((e-s)/n_iter))   
+print("CPU time each iteration: {}".format((e-s)/n_iter)) 
 
 #build the result folder if not exists
 mydir = ("results")

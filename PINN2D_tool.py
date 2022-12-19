@@ -20,11 +20,9 @@ import codecs, json
 np.random.seed(1234)
 tf.random.set_seed(1234)
 
-N = 60
+N = 40
 X_f_train, X_u_train, u_train = gridData(N)
-layers = np.array([2, 50, 50, 1]) #2 hidden layers
-maxcor = 200 
-max_iter = 5000
+layers = np.array([2, 20, 20, 1]) #2 hidden layers
 
 ##data prep ===================================
 x_1 = np.linspace(-1,1,256)  # 256 points between -1 and 1 [256x1]
