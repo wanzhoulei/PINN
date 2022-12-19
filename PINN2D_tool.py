@@ -20,10 +20,6 @@ import codecs, json
 np.random.seed(1234)
 tf.random.set_seed(1234)
 
-N = 40
-X_f_train, X_u_train, u_train = gridData(N)
-layers = np.array([2, 20, 20, 1]) #2 hidden layers
-
 ##data prep ===================================
 x_1 = np.linspace(-1,1,256)  # 256 points between -1 and 1 [256x1]
 x_2 = np.linspace(1,-1,256)  # 256 points between 1 and -1 [256x1]
@@ -42,6 +38,8 @@ a_2 = 1
 usol = np.sin(a_1 * np.pi * X) * np.sin(a_2 * np.pi * Y) #solution chosen for convinience  
 
 u = usol.flatten('F')[:,None] 
+max_iter = 5000
+maxcor = 200
 
 ## Training data ==================================
 def trainingdata(N_u,N_f):
@@ -86,6 +84,11 @@ def gridData(N):
     X_u_train = np.array([point for point in X_f_train if (abs(abs(point[0])-1)<1e-4 or abs(abs(point[1])-1)<1e-4)])
     u_train = np.zeros((X_u_train.shape[0], 1))
     return X_f_train, X_u_train, u_train
+
+N = 40
+X_f_train, X_u_train, u_train = gridData(N)
+layers = np.array([2, 20, 20, 1]) #2 hidden layers
+
     
 def plotData(X_f_train, X_u_train):
     fig,ax = plt.subplots()
@@ -259,8 +262,17 @@ class Sequentialmodel(tf.Module):
             grads_1d = tf.concat([grads_1d, grads_b_1d], 0) #concat grad_biases
         
         return loss_val.numpy(), grads_1d.numpy()
-    
+
     def optimizer_callback(self,parameters):
+                
+        loss_value, loss_u, loss_f = self.loss(X_u_train, u_train, X_f_train, record=True)
+        
+        u_pred = self.evaluate(X_u_test)
+        error_vec = np.linalg.norm((u-u_pred),2)/np.linalg.norm(u,2)
+        
+        tf.print(loss_value, loss_u, loss_f, error_vec)
+    
+    def optimizer_callback_lbfg(self,parameters):
                 
         loss_value, loss_u, loss_f = self.loss(X_u_train, u_train, X_f_train, record=True)
         
