@@ -390,6 +390,77 @@ def L2Kernel(PINN, X_f_train, alpha=1):
         return B
     return func
 
+#N is the number of grid points in one dim including the boundary points
+#N-2 is the number of colocation grid points in one dim  
+def Cn(N, dx, dy):
+    ones = np.ones(N-2);
+    diags = np.array([-1, 1]);
+    data = [-ones, ones];
+    C = sp.spdiags(data, diags, N-2, N-2).toarray();
+    I = np.identity(N-2);
+    A1 = sp.kron(I, C).toarray()/(2*dx);
+    A2 = sp.kron(C, I).toarray()/(2*dy);
+    return np.concatenate((A1, A2), axis=0);
+
+def NegLaplacian(N):
+    dx = 2/(N-1)
+    C = Cn(N, dx, dx)
+    L = np.eye(N**2, N**2)
+    L[(2*N-2):(N**2-2*N+2), (2*N-2):(N**2-2*N+2)] = C.T @ C
+    return L
+
+def H1Kernel(PINN, N, X_f_train, alpha=0):
+    L = NegLaplacian(N)
+    def func(X):
+        with tf.GradientTape(persistent=True) as tape:
+            prediction = PINN.evaluate(X_f_train)
+        Jac = tape.jacobian(prediction, PINN.trainable_variables, experimental_use_pfor=False)
+        Jacobian = tf.concat([tf.reshape(Jac[i],[X_f_train.shape[0], -1]) for i in range(len(Jac))],axis=1)
+        numVars = Jacobian.shape[1]
+        In = np.eye(N**2)
+        B =  tf.transpose(Jacobian)@(In + L)@Jacobian
+        return B + alpha*np.eye(numVars)
+    return func
+
+def H1semiKernel(PINN, N, X_f_train, alpha=0):
+    L = NegLaplacian(N)
+    def func(X):
+        with tf.GradientTape(persistent=True) as tape:
+            prediction = PINN.evaluate(X_f_train)
+        Jac = tape.jacobian(prediction, PINN.trainable_variables, experimental_use_pfor=False)
+        Jacobian = tf.concat([tf.reshape(Jac[i],[X_f_train.shape[0], -1]) for i in range(len(Jac))],axis=1)
+        numVars = Jacobian.shape[1]
+        B =  tf.transpose(Jacobian)@L@Jacobian
+        return B + alpha*np.eye(numVars)
+    return func
+
+def HinvKernel(PINN, N, X_f_train, alpha=0):
+    L = NegLaplacian(N)
+    In = np.eye(N**2)
+    LIninv = np.linalg.inv(In + L)
+    def func(X):
+        with tf.GradientTape(persistent=True) as tape:
+            prediction = PINN.evaluate(X_f_train)
+        Jac = tape.jacobian(prediction, PINN.trainable_variables, experimental_use_pfor=False)
+        Jacobian = tf.concat([tf.reshape(Jac[i],[X_f_train.shape[0], -1]) for i in range(len(Jac))],axis=1)
+        numVars = Jacobian.shape[1]
+        B =  tf.transpose(Jacobian)@LIninv@Jacobian
+        return B + alpha*np.eye(numVars)
+    return func
+
+def HinvsemiKernel(PINN, N, X_f_train, alpha):
+    L = NegLaplacian(N)
+    Linv = np.linalg.inv(L)
+    def func(X):
+        with tf.GradientTape(persistent=True) as tape:
+            prediction = PINN.evaluate(X_f_train)
+        Jac = tape.jacobian(prediction, PINN.trainable_variables, experimental_use_pfor=False)
+        Jacobian = tf.concat([tf.reshape(Jac[i],[X_f_train.shape[0], -1]) for i in range(len(Jac))],axis=1)
+        numVars = Jacobian.shape[1]
+        B =  tf.transpose(Jacobian)@Linv@Jacobian
+        return B + alpha*np.eye(numVars)
+    return func
+
 ##plotting methods
 def solutionplot(u_pred, usol, savepath=None):
     #color map
