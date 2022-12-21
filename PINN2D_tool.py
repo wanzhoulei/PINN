@@ -108,12 +108,13 @@ def plotData(X_f_train, X_u_train):
 
 ##PINN -=============================
 class Sequentialmodel(tf.Module): 
-    def __init__(self, layers, name=None, seed=0):
+    def __init__(self, layers, name=None, seed=0, k=0):
 
         self.W = []  #Weights and biases
         self.parameters = 0 #total number of parameters
         self.loss_trace = []
         self.seed = seed
+        self.k = k
 
         gen = tf.random.Generator.from_seed(seed=self.seed)
         for i in range(len(layers)-1):
@@ -201,7 +202,7 @@ class Sequentialmodel(tf.Module):
     
         g = tf.Variable(x_to_train_f, dtype = 'float64', trainable = False)
 
-        k = 1    
+        k = self.k 
 
         x_1_f = g[:,0:1]
         x_2_f = g[:,1:2]
