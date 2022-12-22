@@ -16,11 +16,11 @@ import scipy.optimize
 n_iter = 1000; alpha=0
 random_seed = 0 #set the random seed for generating the initial parameters of PINN
 
-N = 40 ##use 40 by 40 grid points
-layers = np.array([2, 20, 20, 1]) #2 hidden layers
+N = 50 ##use 40 by 40 grid points
+layers = np.array([2, 30, 30, 1]) #2 hidden layers
 X_f_train, X_u_train, u_train = gridData(N)
 
-PINN = Sequentialmodel(layers, seed=random_seed)
+PINN = Sequentialmodel(layers, seed=random_seed, N=N)
 init_params = PINN.get_weights().numpy()
 kernel = L2Kernel(PINN, X_f_train, alpha=0)
 
@@ -46,24 +46,27 @@ mydir = ("results")
 if not os.path.isdir(mydir):
     os.makedirs(mydir)
 ##save the resulting convergence trace
-tracepath = "./results/2dpoisson_GN_{}iter_seed{}_alpha{}_N40_2-20-20-1.csv".format(n_iter, random_seed, str(alpha).replace('.','d'))
+tracepath = "./results/2dpoisson_GN_{}iter_seed{}_alpha{}_f_{}_N40_{}.csv".format(n_iter, 
+    random_seed, str(alpha).replace('.','d'), str(func_RHS).split(' ')[1], layertostr(layers))
 np.savetxt(tracepath, np.array(PINN.loss_trace), delimiter=",")
 
 ##save the plot
 PINN.set_weights(results.x)
 u_pred = PINN.evaluate(X_u_test)
 u_pred = np.reshape(u_pred,(256,256),order='F') 
-figpath = './results/2dpoisson_GN_{}iter_seed{}_alpha{}_N40_2-20-20-1_solution.png'.format(n_iter, random_seed, str(alpha).replace('.','d'))
+figpath = './results/2dpoisson_GN_{}iter_seed{}_alpha{}_f_{}_N40_{}_solution.png'.format(n_iter, 
+    random_seed, str(alpha).replace('.','d'), str(func_RHS).split(' ')[1], layertostr(layers))
 solutionplot(u_pred, usol, figpath)
 plt.show()
 plt.cla()
 
-##save the convergence trace plot
-pltpath = "./results/2dpoisson_GN_{}iter_seed{}_alpha{}_N40_2-20-20-1_loss.png".format(n_iter, random_seed, str(alpha).replace('.','d'))
+
 plt.plot(PINN.loss_trace)
 plt.xlabel("number of iteration")
 plt.ylabel("loss function")
 plt.title("Gauss Newton on 2d Poisson with PINN loss trace")
-plt.savefig(pltpath, dpi=300)
 plt.show()
-
+##save the convergence trace plot
+pltpath = "./results/2dpoisson_GN_{}iter_seed{}_alpha{}_f_{}_N40_{}_loss.png".format(n_iter, 
+    random_seed, str(alpha).replace('.','d'), str(func_RHS).split(' ')[1], layertostr(layers))
+plt.savefig(pltpath, dpi=300)
