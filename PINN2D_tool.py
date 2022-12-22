@@ -67,7 +67,7 @@ min_val = -2; max_val=2
 usol = func_RHS(X, Y) #solution chosen for convinience  
 
 u = usol.flatten('F')[:,None] 
-max_iter = 5000
+max_iter = 200000
 maxcor = 200
 
 ## Training data ==================================
@@ -114,9 +114,9 @@ def gridData(N):
     u_train = np.zeros((X_u_train.shape[0], 1))
     return X_f_train, X_u_train, u_train
 
-N = 40
-X_f_train, X_u_train, u_train = gridData(N)
-layers = np.array([2, 20, 20, 1]) #2 hidden layers
+# N = 40
+# X_f_train, X_u_train, u_train = gridData(N)
+# layers = np.array([2, 20, 20, 1]) #2 hidden layers
 
     
 def plotData(X_f_train, X_u_train):
@@ -134,12 +134,18 @@ def plotData(X_f_train, X_u_train):
 
 ##PINN -=============================
 class Sequentialmodel(tf.Module): 
-    def __init__(self, layers, name=None, seed=0):
+    def __init__(self, layers, seed=0, N=40):
 
         self.W = []  #Weights and biases
         self.parameters = 0 #total number of parameters
         self.loss_trace = []
         self.seed = seed
+        self.layers = layers
+        self.N = N
+        X_f_train, X_u_train, u_train = gridData(N)
+        self.X_f_train = X_f_train
+        self.X_u_train = X_u_train
+        self.u_train = u_train
 
         gen = tf.random.Generator.from_seed(seed=self.seed)
         for i in range(len(layers)-1):
@@ -176,7 +182,7 @@ class Sequentialmodel(tf.Module):
         
         a = x
         
-        for i in range(len(layers)-2):
+        for i in range(len(self.layers)-2):
             
             z = tf.add(tf.matmul(a, self.W[2*i]), self.W[2*i+1])
             a = tf.nn.tanh(z)
@@ -189,7 +195,7 @@ class Sequentialmodel(tf.Module):
 
         parameters_1d = []  # [.... W_i,b_i.....  ] 1d array
         
-        for i in range (len(layers)-1):
+        for i in range (len(self.layers)-1):
             
             w_1d = tf.reshape(self.W[2*i],[-1])   #flatten weights 
             b_1d = tf.reshape(self.W[2*i+1],[-1]) #flatten biases
@@ -201,7 +207,7 @@ class Sequentialmodel(tf.Module):
         
     def set_weights(self,parameters):
                 
-        for i in range (len(layers)-1):
+        for i in range (len(self.layers)-1):
 
             shape_w = tf.shape(self.W[2*i]).numpy() # shape of the weight tensor
             size_w = tf.size(self.W[2*i]).numpy() #size of the weight tensor 
@@ -273,7 +279,7 @@ class Sequentialmodel(tf.Module):
         with tf.GradientTape() as tape:
             tape.watch(self.trainable_variables)
             
-            loss_val, loss_u, loss_f = self.loss(X_u_train, u_train, X_f_train)
+            loss_val, loss_u, loss_f = self.loss(self.X_u_train, self.u_train, self.X_f_train)
             
         grads = tape.gradient(loss_val,self.trainable_variables)
                 
@@ -281,7 +287,7 @@ class Sequentialmodel(tf.Module):
         
         grads_1d = [ ] #store 1d grads 
         
-        for i in range (len(layers)-1):
+        for i in range (len(self.layers)-1):
 
             grads_w_1d = tf.reshape(grads[2*i],[-1]) #flatten weights 
             grads_b_1d = tf.reshape(grads[2*i+1],[-1]) #flatten biases
@@ -293,21 +299,21 @@ class Sequentialmodel(tf.Module):
 
     def optimizer_callback(self,parameters):
                 
-        loss_value, loss_u, loss_f = self.loss(X_u_train, u_train, X_f_train, record=True)
+        loss_value, loss_u, loss_f = self.loss(self.X_u_train, self.u_train, self.X_f_train, record=True)
         
         u_pred = self.evaluate(X_u_test)
         error_vec = np.linalg.norm((u-u_pred),2)/np.linalg.norm(u,2)
         
-        tf.print('{}th iteration: train loss: {}'.format(len(self.loss_trace), loss_value))
+        tf.print('{}th iteration: train loss: {}'.format(self.iter_counter, loss_value))
     
     def optimizer_callback_lbfg(self,parameters):
                 
-        loss_value, loss_u, loss_f = self.loss(X_u_train, u_train, X_f_train, record=True)
+        loss_value, loss_u, loss_f = self.loss(self.X_u_train, self.u_train, self.X_f_train, record=True)
         
         u_pred = self.evaluate(X_u_test)
         error_vec = np.linalg.norm((u-u_pred),2)/np.linalg.norm(u,2)
         
-        tf.print(loss_value, loss_u, loss_f, error_vec)
+        tf.print('{}th iteration: train loss: {}'.format(self.iter_counter, loss_value))
         
         self.LbfgsInvHessProduct(parameters)
         
@@ -391,7 +397,7 @@ class Sequentialmodel(tf.Module):
 
         with tf.GradientTape() as tape:
             tape.watch(self.W)
-            loss_val = self.loss(X_u_train, u_train, X_f_train)
+            loss_val = self.loss(self.X_u_train, self.u_train, self.X_f_train)
 
         grads = tape.gradient(loss_val,self.W)
 
@@ -520,3 +526,10 @@ def solutionplot(u_pred, usol, savepath=None):
     
     if savepath is not None:
         plt.savefig(savepath, dpi = 500, bbox_inches='tight')
+
+#utility function 
+def layertostr(layers):
+    s = str(layers[0])
+    for i in range(1, len(layers)):
+        s += '-' + str(layers[i])
+    return s
