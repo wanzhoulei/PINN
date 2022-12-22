@@ -13,10 +13,10 @@ import time
 import scipy.optimize
 
 ##change the number of iterations, damping coeff alpha and random seed here if needed
-n_iter = 10
+n_iter = 1000
 random_seed = 0 #set the random seed for generating the initial parameters of PINN
 
-N = 40 ##use 40 by 40 grid points
+N = 50 ##use 40 by 40 grid points
 layers = np.array([2, 30, 30, 1]) #2 hidden layers
 X_f_train, X_u_train, u_train = gridData(N)
 
@@ -47,7 +47,6 @@ results = scipy.optimize.minimize(fun = PINN.optimizerfunc,
 e = time.time()
 print("Entire time: {}".format(e-s))
 print("CPU time each iteration: {}".format((e-s)/n_iter))
-print(PINN.store)
 
 #build the result folder if not exists
 mydir = ("results")
