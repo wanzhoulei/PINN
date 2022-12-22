@@ -13,7 +13,7 @@ import time
 import scipy.optimize
 
 ##change the number of iterations, damping coeff alpha and random seed here if needed
-n_iter = 8000
+n_iter = 10
 random_seed = 0 #set the random seed for generating the initial parameters of PINN
 
 N = 40 ##use 40 by 40 grid points
@@ -23,7 +23,7 @@ X_f_train, X_u_train, u_train = gridData(N)
 maxcor = 200 ##maximum memory in L-BFGS 
 max_iter = 10000
 
-PINN = Sequentialmodel(layers, seed=random_seed)
+PINN = Sequentialmodel(layers, seed=random_seed, N=N)
 init_params = PINN.get_weights().numpy()
 
 # train the model with Scipy newton-cg optimizer to run L2 GD
@@ -47,29 +47,30 @@ results = scipy.optimize.minimize(fun = PINN.optimizerfunc,
 e = time.time()
 print("Entire time: {}".format(e-s))
 print("CPU time each iteration: {}".format((e-s)/n_iter))
+print(PINN.store)
 
 #build the result folder if not exists
 mydir = ("results")
 if not os.path.isdir(mydir):
     os.makedirs(mydir)
 ##save the resulting convergence trace
-tracepath = "./results/2dpoisson_BFGS_{}iter_seed{}_f_{}_N40_2-30-30-1.csv".format(n_iter, 
-    random_seed, str(func_RHS).split(' ')[1])
+tracepath = "./results/2dpoisson_BFGS_{}iter_seed{}_f_{}_N40_{}.csv".format(n_iter, 
+    random_seed, str(func_RHS).split(' ')[1], layertostr(layers))
 np.savetxt(tracepath, np.array(PINN.loss_trace), delimiter=",")
 
 ##save the plot
 PINN.set_weights(results.x)
 u_pred = PINN.evaluate(X_u_test)
 u_pred = np.reshape(u_pred,(256,256),order='F') 
-figpath = './results/2dpoisson_BFGS_{}iter_seed{}_f_{}_N40_2-30-30-1_solution.png'.format(n_iter, 
-    random_seed, str(func_RHS).split(' ')[1])
+figpath = './results/2dpoisson_BFGS_{}iter_seed{}_f_{}_N40_{}_solution.png'.format(n_iter, 
+    random_seed, str(func_RHS).split(' ')[1], layertostr(layers))
 solutionplot(u_pred, usol, figpath)
 plt.show()
 plt.cla()
 
 ##save the convergence trace plot
-pltpath = "./results/2dpoisson_BFGS_{}iter_seed{}_f_{}_N40_2-30-30-1_loss.png".format(n_iter, 
-    random_seed, str(func_RHS).split(' ')[1])
+pltpath = "./results/2dpoisson_BFGS_{}iter_seed{}_f_{}_N40_{}_loss.png".format(n_iter, 
+    random_seed, str(func_RHS).split(' ')[1], layertostr(layers))
 plt.plot(PINN.loss_trace)
 plt.xlabel("number of iteration")
 plt.ylabel("loss function")
