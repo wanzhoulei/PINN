@@ -59,8 +59,8 @@ def div3(x, y):
     return -2*np.pi**2*np.sin(np.pi*x)*np.sin(np.pi*y) - 18*np.pi**2*np.sin(3*np.pi*x)*np.sin(3*np.pi*y)
 
 ##change these two lines if you want to use other functions
-func_RHS = u2
-div = div2
+func_RHS = u3
+div = div3
 min_val = -2; max_val=2
 
 ##change this line if you want to change the PDE
@@ -304,7 +304,7 @@ class Sequentialmodel(tf.Module):
         u_pred = self.evaluate(X_u_test)
         error_vec = np.linalg.norm((u-u_pred),2)/np.linalg.norm(u,2)
         
-        tf.print('{}th iteration: train loss: {}'.format(self.iter_counter, loss_value))
+        tf.print('{}th iteration: train loss: {}'.format(len(self.loss_trace), loss_value))
     
     def optimizer_callback_lbfg(self,parameters):
                 
