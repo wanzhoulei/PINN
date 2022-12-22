@@ -35,10 +35,28 @@ X_u_test = np.hstack((X.flatten(order='F')[:,None], Y.flatten(order='F')[:,None]
 lb = np.array([-1, -1]) #lower bound
 ub = np.array([1, 1])  #upper bound
 
-a_1 = 1 
-a_2 = 1
+## u = sin(pi x)sin(pi y)
+def u1(x, y):
+    return np.sin( np.pi * x) * np.sin( np.pi * y)
 
-usol = np.sin(a_1 * np.pi * X) * np.sin(a_2 * np.pi * Y) #solution chosen for convinience  
+##the divergence of u1, i.e. u1_xx + u1_yy
+def div1(x, y):
+    return -2*np.pi**2*np.sin(np.pi*x)*np.sin(np.pi*y)
+
+##u = sin(pi x)sin(pi y) + sin(6pi x)sin(6pi y)
+def u2(x, y):
+    return np.sin( np.pi * x) * np.sin( np.pi * y) + np.sin( 6*np.pi * x) * np.sin( 6*np.pi * y)
+
+def div2(x, y):
+    return -2*np.pi**2*np.sin(np.pi*x)*np.sin(np.pi*y) - 72*np.pi**2*np.sin(6*np.pi*x)*np.sin(6*np.pi*y)
+
+##change these two lines if you want to use other functions
+func_RHS = u2
+div = div2
+min_val = -2; max_val=2
+
+##change this line if you want to change the PDE
+usol = func_RHS(X, Y) #solution chosen for convinience  
 
 u = usol.flatten('F')[:,None] 
 max_iter = 5000
@@ -108,13 +126,12 @@ def plotData(X_f_train, X_u_train):
 
 ##PINN -=============================
 class Sequentialmodel(tf.Module): 
-    def __init__(self, layers, name=None, seed=0, k=0):
+    def __init__(self, layers, name=None, seed=0):
 
         self.W = []  #Weights and biases
         self.parameters = 0 #total number of parameters
         self.loss_trace = []
         self.seed = seed
-        self.k = k
 
         gen = tf.random.Generator.from_seed(seed=self.seed)
         for i in range(len(layers)-1):
@@ -202,8 +219,6 @@ class Sequentialmodel(tf.Module):
     
         g = tf.Variable(x_to_train_f, dtype = 'float64', trainable = False)
 
-        k = self.k 
-
         x_1_f = g[:,0:1]
         x_2_f = g[:,1:2]
 
@@ -223,9 +238,10 @@ class Sequentialmodel(tf.Module):
 
         del tape
 
-        q = -( (a_1*np.pi)**2 + (a_2*np.pi)**2 - k**2 ) * np.sin(a_1*np.pi*x_1_f) * np.sin(a_2*np.pi*x_2_f)
+        #q = -( (a_1*np.pi)**2 + (a_2*np.pi)**2 - k**2 ) * np.sin(a_1*np.pi*x_1_f) * np.sin(a_2*np.pi*x_2_f)
+        q = div(x_1_f, x_2_f)
 
-        f = u_xx_1 + u_xx_2 + k**2 * u - q #residual
+        f = u_xx_1 + u_xx_2 - q #residual
 
         loss_f = tf.reduce_mean(tf.square(f))
 
@@ -466,7 +482,7 @@ def HinvsemiKernel(PINN, N, X_f_train, alpha):
 def solutionplot(u_pred, usol, savepath=None):
     #color map
     cmap = cm.get_cmap('jet')
-    normalize = colors.Normalize(vmin=-1, vmax=1)
+    normalize = colors.Normalize(vmin=min_val, vmax=max_val)
     
     #Ground truth
     fig_1 = plt.figure(1, figsize=(18, 5))
