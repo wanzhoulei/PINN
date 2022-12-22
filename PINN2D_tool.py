@@ -47,8 +47,16 @@ def div1(x, y):
 def u2(x, y):
     return np.sin( np.pi * x) * np.sin( np.pi * y) + np.sin( 6*np.pi * x) * np.sin( 6*np.pi * y)
 
+##divergence of u2
 def div2(x, y):
     return -2*np.pi**2*np.sin(np.pi*x)*np.sin(np.pi*y) - 72*np.pi**2*np.sin(6*np.pi*x)*np.sin(6*np.pi*y)
+
+##u3 = sin(pi x)sin(pi y) + sin(3pi x)sin(3pi y)
+def u3(x, y):
+    return np.sin( np.pi * x) * np.sin( np.pi * y) + np.sin( 3*np.pi * x) * np.sin( 3*np.pi * y)
+
+def div3(x, y):
+    return -2*np.pi**2*np.sin(np.pi*x)*np.sin(np.pi*y) - 18*np.pi**2*np.sin(3*np.pi*x)*np.sin(3*np.pi*y)
 
 ##change these two lines if you want to use other functions
 func_RHS = u2
@@ -290,7 +298,7 @@ class Sequentialmodel(tf.Module):
         u_pred = self.evaluate(X_u_test)
         error_vec = np.linalg.norm((u-u_pred),2)/np.linalg.norm(u,2)
         
-        tf.print(loss_value, loss_u, loss_f, error_vec)
+        tf.print('{}th iteration: train loss: {}'.format(len(self.loss_trace), loss_value))
     
     def optimizer_callback_lbfg(self,parameters):
                 
