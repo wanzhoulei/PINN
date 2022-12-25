@@ -133,8 +133,10 @@ def plotData(X_f_train, X_u_train):
     plt.show()
 
 ##PINN -=============================
+#gamma is the weight for the boundary points
+# loss = gamma*loss_BC + (1-gamma)*loss_colocation
 class Sequentialmodel(tf.Module): 
-    def __init__(self, layers, seed=0, N=40):
+    def __init__(self, layers, seed=0, N=40, gamma=1):
 
         self.W = []  #Weights and biases
         self.parameters = 0 #total number of parameters
@@ -146,6 +148,9 @@ class Sequentialmodel(tf.Module):
         self.X_f_train = X_f_train
         self.X_u_train = X_u_train
         self.u_train = u_train
+        self.gamma = gamma
+        self.start_time = None
+        self.clock = []
 
         gen = tf.random.Generator.from_seed(seed=self.seed)
         for i in range(len(layers)-1):
@@ -266,7 +271,7 @@ class Sequentialmodel(tf.Module):
         loss_u = self.loss_BC(x,y)
         loss_f, f = self.loss_PDE(g)
 
-        loss = loss_u + loss_f
+        loss = self.gamma*loss_u + (2-self.gamma)*loss_f
         if record:
             self.loss_trace.append(float(loss))
 
@@ -303,8 +308,9 @@ class Sequentialmodel(tf.Module):
         
         u_pred = self.evaluate(X_u_test)
         error_vec = np.linalg.norm((u-u_pred),2)/np.linalg.norm(u,2)
+        self.clock.append(time.time()-self.start_time)
         
-        tf.print('{}th iteration: train loss: {}'.format(len(self.loss_trace), loss_value))
+        tf.print('{}th iteration: total loss: {}, COLO: {}, BC: {}'.format(len(self.loss_trace), loss_value, loss_f, loss_u))
     
     def optimizer_callback_lbfg(self,parameters):
                 
@@ -312,8 +318,9 @@ class Sequentialmodel(tf.Module):
         
         u_pred = self.evaluate(X_u_test)
         error_vec = np.linalg.norm((u-u_pred),2)/np.linalg.norm(u,2)
+        self.clock.append(time.time()-self.start_time)
         
-        tf.print('{}th iteration: train loss: {}'.format(self.iter_counter, loss_value))
+        tf.print('{}th iteration: total loss: {}, COLO: {}, BC: {}'.format(self.iter_counter, loss_value, loss_f, loss_u))
         
         self.LbfgsInvHessProduct(parameters)
         
@@ -436,8 +443,17 @@ def Cn(N, dx, dy):
 def NegLaplacian(N):
     dx = 2/(N-1)
     C = Cn(N, dx, dx)
+    CTC = C.T @ C
     L = np.eye(N**2, N**2)
-    L[(2*N-2):(N**2-2*N+2), (2*N-2):(N**2-2*N+2)] = C.T @ C
+    #construct interior points index 
+    interior_index = []; boundary = [0, N-1]
+    for i in range(N**2):
+        if (i//N) in boundary or (i%N) in boundary:
+            continue
+        interior_index.append(i)
+    B = L[interior_index, :]
+    B[:, interior_index] = CTC
+    L[interior_index, :] = B   
     return L
 
 def H1Kernel(PINN, N, X_f_train, alpha=0):
