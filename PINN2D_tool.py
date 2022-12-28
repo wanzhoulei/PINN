@@ -58,10 +58,14 @@ def u3(x, y):
 def div3(x, y):
     return -2*np.pi**2*np.sin(np.pi*x)*np.sin(np.pi*y) - 18*np.pi**2*np.sin(3*np.pi*x)*np.sin(3*np.pi*y)
 
+##add constant 3 to u3
+def u4(x, y):
+    return np.sin( np.pi * x) * np.sin( np.pi * y) + np.sin( 3*np.pi * x) * np.sin( 3*np.pi * y) + 3
+
 ##change these two lines if you want to use other functions
-func_RHS = u3
+func_RHS = u4
 div = div3
-min_val = -2; max_val=2
+min_val = 1; max_val=5
 
 ##change this line if you want to change the PDE
 usol = func_RHS(X, Y) #solution chosen for convinience  
@@ -103,7 +107,7 @@ def trainingdata(N_u,N_f):
     
     return X_f_train, X_u_train, u_train 
 
-def gridData(N):
+def gridData(N, boundary=0):
     dx = 2/float(N-1)
     X_f_train = []
     for i in range(N):
@@ -111,7 +115,7 @@ def gridData(N):
             X_f_train.append([-1 + dx*i, -1 + dx*j])
     X_f_train = np.array(X_f_train)
     X_u_train = np.array([point for point in X_f_train if (abs(abs(point[0])-1)<1e-4 or abs(abs(point[1])-1)<1e-4)])
-    u_train = np.zeros((X_u_train.shape[0], 1))
+    u_train = np.zeros((X_u_train.shape[0], 1))+boundary
     return X_f_train, X_u_train, u_train
 
 # N = 40
@@ -122,8 +126,8 @@ def gridData(N):
 def plotData(X_f_train, X_u_train):
     fig,ax = plt.subplots()
 
-    plt.plot(X_u_train[:,0],X_u_train[:,1], '*', color = 'red', markersize = 5, label = 'Boundary collocation points= 400')
-    plt.plot(X_f_train[:,0],X_f_train[:,1], 'o', markersize = 0.5, label = 'PDE collocation points = 10,000')
+    plt.plot(X_u_train[:,0],X_u_train[:,1], '*', color = 'red', markersize = 5, label = 'Boundary points= {}'.format(X_u_train.shape[0]))
+    plt.plot(X_f_train[:,0],X_f_train[:,1], 'o', markersize = 0.5, label = 'PDE collocation points = {}'.format(X_f_train.shape[0]-X_u_train.shape[0]))
 
     plt.xlabel(r'$x_1$')
     plt.ylabel(r'$x_2$')
@@ -136,7 +140,7 @@ def plotData(X_f_train, X_u_train):
 #gamma is the weight for the boundary points
 # loss = gamma*loss_BC + (1-gamma)*loss_colocation
 class Sequentialmodel(tf.Module): 
-    def __init__(self, layers, seed=0, N=40, gamma=1):
+    def __init__(self, layers, seed=0, N=40, gamma=1, boundary=0):
 
         self.W = []  #Weights and biases
         self.parameters = 0 #total number of parameters
@@ -144,13 +148,15 @@ class Sequentialmodel(tf.Module):
         self.seed = seed
         self.layers = layers
         self.N = N
-        X_f_train, X_u_train, u_train = gridData(N)
+        X_f_train, X_u_train, u_train = gridData(N, boundary=boundary)
         self.X_f_train = X_f_train
         self.X_u_train = X_u_train
         self.u_train = u_train
+        self.X_interior = np.array([point for point in X_f_train if (abs(abs(point[0])-1)>=1e-4 and abs(abs(point[1])-1)>=1e-4)])
         self.gamma = gamma
         self.start_time = None
         self.clock = []
+        self.boundary = boundary
 
         gen = tf.random.Generator.from_seed(seed=self.seed)
         for i in range(len(layers)-1):
@@ -174,6 +180,10 @@ class Sequentialmodel(tf.Module):
             self.W.append(b)
 
             self.parameters +=  input_dim * output_dim + output_dim
+
+        if self.boundary != 0:
+                bound = tf.cast(self.boundary*tf.ones([layers[-1]]), dtype='float64')
+                self.W[-1].assign_add(bound)
             
         self.X = np.zeros(self.parameters) #store iterates
         self.G = np.zeros(self.parameters) #store gradients
@@ -505,6 +515,34 @@ def HinvsemiKernel(PINN, N, X_f_train, alpha):
         Jacobian = tf.concat([tf.reshape(Jac[i],[X_f_train.shape[0], -1]) for i in range(len(Jac))],axis=1)
         numVars = Jacobian.shape[1]
         B =  tf.transpose(Jacobian)@Linv@Jacobian
+        return B + alpha*np.eye(numVars)
+    return func
+
+def FRKernel(PINN, X_f_train, alpha=0):
+    def func(X):
+        with tf.GradientTape(persistent=True) as tape:
+            prediction = PINN.evaluate(X_f_train)
+        Jac = tape.jacobian(prediction, PINN.trainable_variables, experimental_use_pfor=False)
+        Jacobian = tf.concat([tf.reshape(Jac[i],[X_f_train.shape[0], -1]) for i in range(len(Jac))],axis=1)
+        rho = np.array(prediction).flatten()
+        numVars = Jacobian.shape[1]
+        B = (tf.transpose(Jacobian)*(1/rho))@Jacobian
+        return B + alpha*np.eye(numVars)
+    return func
+
+#W2 NGD kernel matrix 
+def W2Kernel(PINN, N, alpha=0):
+    dx = 2/(N-1)
+    C = Cn(N, dx, dx)
+    def func(X):
+        with tf.GradientTape(persistent=True) as tape:
+            prediction = PINN.evaluate(PINN.X_interior)
+        Jac = tape.jacobian(prediction, PINN.trainable_variables, experimental_use_pfor=False)
+        Jacobian = tf.concat([tf.reshape(Jac[i],[PINN.X_interior.shape[0], -1]) for i in range(len(Jac))],axis=1)
+        numVars = Jacobian.shape[1]
+        u = np.array(PINN.evaluate(PINN.X_interior)).flatten()
+        u = np.hstack((u, u))
+        B =  tf.transpose(Jacobian)@np.linalg.inv((C.T*u)@C)@Jacobian
         return B + alpha*np.eye(numVars)
     return func
 
