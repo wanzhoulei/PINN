@@ -87,7 +87,7 @@ pltpath = "./results/2dpoisson_W2_{}iter_seed{}_alpha{}_f_{}_N{}_{}_loss_gamma{}
 plt.savefig(pltpath, dpi=300)
 
 if write_pickle:
-    pickle_writepath = './results/2dpoisson_W2_{}iter_seed{}_f_{}_N{}_{}_PINN_gamma{}.dat'.format(len(PINN.loss_trace), 
-        random_seed, str(func_RHS).split(' ')[1], N, layertostr(layers), gamma)
+    pickle_writepath = './results/2dpoisson_W2_{}iter_seed{}_alpha{}_f_{}_N{}_{}_PINN_gamma{}.dat'.format(len(PINN.loss_trace), 
+        random_seed, str(alpha).replace('.','d'), str(func_RHS).split(' ')[1], N, layertostr(layers), gamma)
     with open(pickle_writepath, 'wb') as f:
         pickle.dump(PINN, f)
