@@ -33,7 +33,10 @@ kernel = W2Kernel(PINN, N, alpha=alpha)
 
 # train the model with Scipy newton-cg optimizer to run FR
 s = time.time()
-PINN.start_time = s
+if read_picke is None:
+    PINN.start_time = s
+else:
+    PINN.start_time = s - PINN.clock[-1]
 results = scipy.optimize.minimize(fun = PINN.optimizerfunc, 
                                   x0 = init_params, 
                                   args=(), 
@@ -54,12 +57,12 @@ mydir = ("results")
 if not os.path.isdir(mydir):
     os.makedirs(mydir)
 ##save the resulting convergence trace
-tracepath = "./results/2dpoisson_W2_{}iter_seed{}_alpha{}_f_{}_N{}_{}_gamma{}.csv".format(n_iter, 
+tracepath = "./results/2dpoisson_W2_{}iter_seed{}_alpha{}_f_{}_N{}_{}_gamma{}.csv".format(len(PINN.loss_trace), 
     random_seed, str(alpha).replace('.','d'), str(func_RHS).split(' ')[1], N, layertostr(layers), gamma)
 np.savetxt(tracepath, np.array(PINN.loss_trace), delimiter=",")
 
 #save the cpu time
-tracepath2 = "./results/2dpoisson_W2_{}iter_seed{}_alpha{}_f_{}_N{}_{}_gamma{}_CPUtime.csv".format(n_iter, 
+tracepath2 = "./results/2dpoisson_W2_{}iter_seed{}_alpha{}_f_{}_N{}_{}_gamma{}_CPUtime.csv".format(len(PINN.loss_trace), 
     random_seed, str(alpha).replace('.','d'), str(func_RHS).split(' ')[1], N, layertostr(layers), gamma)
 np.savetxt(tracepath2, np.array(PINN.clock), delimiter=",")
 
@@ -67,7 +70,7 @@ np.savetxt(tracepath2, np.array(PINN.clock), delimiter=",")
 PINN.set_weights(results.x)
 u_pred = PINN.evaluate(X_u_test)
 u_pred = np.reshape(u_pred,(256,256),order='F') 
-figpath = './results/2dpoisson_W2_{}iter_seed{}_alpha{}_f_{}_N{}_{}_solution_gamma{}.png'.format(n_iter, 
+figpath = './results/2dpoisson_W2_{}iter_seed{}_alpha{}_f_{}_N{}_{}_solution_gamma{}.png'.format(len(PINN.loss_trace), 
     random_seed, str(alpha).replace('.','d'), str(func_RHS).split(' ')[1], N, layertostr(layers), gamma)
 solutionplot(u_pred, usol, figpath)
 plt.clf()
@@ -79,6 +82,12 @@ plt.xlabel("number of iteration")
 plt.ylabel("loss function")
 plt.title("W2 NGD on 2d Poisson with PINN loss trace")
 ##save the convergence trace plot
-pltpath = "./results/2dpoisson_W2_{}iter_seed{}_alpha{}_f_{}_N{}_{}_loss_gamma{}.png".format(n_iter, 
+pltpath = "./results/2dpoisson_W2_{}iter_seed{}_alpha{}_f_{}_N{}_{}_loss_gamma{}.png".format(len(PINN.loss_trace), 
     random_seed, str(alpha).replace('.','d'), str(func_RHS).split(' ')[1], N, layertostr(layers), gamma)
 plt.savefig(pltpath, dpi=300)
+
+if write_pickle:
+    pickle_writepath = './results/2dpoisson_W2_{}iter_seed{}_f_{}_N{}_{}_PINN_gamma{}.dat'.format(len(PINN.loss_trace), 
+        random_seed, str(func_RHS).split(' ')[1], N, layertostr(layers), gamma)
+    with open(pickle_writepath, 'wb') as f:
+        pickle.dump(PINN, f)
