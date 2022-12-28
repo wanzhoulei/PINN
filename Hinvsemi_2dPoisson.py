@@ -81,7 +81,6 @@ plt.plot(PINN.loss_trace)
 plt.xlabel("number of iteration")
 plt.ylabel("loss function")
 plt.title("H-1 seminorm NGD on 2d Poisson with PINN loss trace")
-plt.show()
 ##save the convergence trace plot
 pltpath = "./results/2dpoisson_Hinvsemi_{}iter_seed{}_alpha{}_f_{}_N{}_{}_loss_gamma{}.png".format(len(PINN.loss_trace), 
     random_seed, str(alpha).replace('.','d'), str(func_RHS).split(' ')[1], N, layertostr(layers), gamma)
