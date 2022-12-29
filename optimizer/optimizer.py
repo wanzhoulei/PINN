@@ -1,5 +1,6 @@
-
+import time
 import numpy as np
+import tensorflow as tf
 
 class MiniBatch:
     def __init__(self, X_f_train, X_u_train, u_train, BC_ratio, Interior_ratio):
@@ -46,7 +47,37 @@ class MiniBatch:
         u_train = self.u_train[:self.BC_size]
         return (X_f_train, X_u_train, u_train, sample_index, BC_sample_index, Interior_sample_index)
 
-
+##this method does Stochastic Gradient Descent on the give PINN model
+def SGD_optimizer(PINN, lr, n_iter, BC_ratio=1, Interior_ratio=1):
+    ##construct the minibatch object
+    minibatch = MiniBatch(PINN.X_f_train, PINN.X_u_train, PINN.u_train, BC_ratio, Interior_ratio)
+    ##enter the loop
+    for i in range(n_iter):
+        ##construct a minibatch set
+        X_f_train, X_u_train, u_train, _, _, _ = minibatch.sample()
+        #compute the gradient using this minibatch
+        with tf.GradientTape() as tape:
+            tape.watch(PINN.trainable_variables)
+            loss_val, loss_u, loss_f = PINN.loss(X_u_train, u_train, X_f_train) 
+        grads = tape.gradient(loss_val, PINN.trainable_variables)
+        del tape 
+        grads_1d = [ ] #store 1d grads 
+        for j in range (len(PINN.layers)-1):
+            grads_w_1d = tf.reshape(grads[2*j],[-1]) #flatten weights 
+            grads_b_1d = tf.reshape(grads[2*j+1],[-1]) #flatten biases
+            grads_1d = tf.concat([grads_1d, grads_w_1d], 0) #concat grad_weights 
+            grads_1d = tf.concat([grads_1d, grads_b_1d], 0) #concat grad_biases
+        grads_1d = grads_1d.numpy()
+        ##compute the new parameter, doing the descent operation
+        newParameter = PINN.get_weights().numpy() - lr*grads_1d
+        ##set the new parameter
+        PINN.set_weights(newParameter)
+        ##compute and record the total loss
+        loss_value, loss_u, loss_f = PINN.loss(PINN.X_u_train, PINN.u_train, PINN.X_f_train, record=True)
+        tf.print('{}th iteration: total loss: {}, COLO: {}, BC: {}'.format(len(PINN.loss_trace), loss_value, loss_f, loss_u))
+        ##record cpu time
+        PINN.clock.append(time.time()-PINN.start_time)
+        
 
 if __name__ == '__main__':
     print('hello')
