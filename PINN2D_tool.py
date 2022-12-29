@@ -12,15 +12,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors as colors
-import matplotlib.ticker
 import time
 from pyDOE import lhs         #Latin Hypercube Sampling
-import pandas as pd
-import seaborn as sns 
-import codecs, json
+from optimizer.optimizer import *
 
 # generates same random numbers each time
-np.random.seed(1234)
 tf.random.set_seed(1234)
 
 ##data prep ===================================
@@ -587,3 +583,8 @@ def layertostr(layers):
     for i in range(1, len(layers)):
         s += '-' + str(layers[i])
     return s
+
+if __name__ == '__main__':
+    X_f_train, X_u_train, u_train = gridData(7)
+    minibatch = MiniBatch(X_f_train, X_u_train, u_train, 0.5, 0.5)
+    X_f, X_u, u, sample, sample_BC, sample_interior = minibatch.sample()
