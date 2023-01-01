@@ -48,9 +48,13 @@ class MiniBatch:
         return (X_f_train, X_u_train, u_train, sample_index, BC_sample_index, Interior_sample_index)
 
 ##this method does Stochastic Gradient Descent on the give PINN model
+##it uses backtracking line search to do the GD
 def SGD_optimizer(PINN, lr, n_iter, BC_ratio=1, Interior_ratio=1):
     ##construct the minibatch object
     minibatch = MiniBatch(PINN.X_f_train, PINN.X_u_train, PINN.u_train, BC_ratio, Interior_ratio)
+    ##append the initial loss to the loss_trace list
+    init_loss, init_u, init_f = PINN.loss(PINN.X_u_train, PINN.u_train, PINN.X_f_train, record=True)
+    tf.print('Initial total loss: {}, COLO: {}, BC: {}'.format(init_loss, init_u, init_f))
     ##enter the loop
     for i in range(n_iter):
         ##construct a minibatch set
@@ -68,16 +72,147 @@ def SGD_optimizer(PINN, lr, n_iter, BC_ratio=1, Interior_ratio=1):
             grads_1d = tf.concat([grads_1d, grads_w_1d], 0) #concat grad_weights 
             grads_1d = tf.concat([grads_1d, grads_b_1d], 0) #concat grad_biases
         grads_1d = grads_1d.numpy()
+
+        oldParameter = PINN.get_weights().numpy()
+        step = lr
         ##compute the new parameter, doing the descent operation
-        newParameter = PINN.get_weights().numpy() - lr*grads_1d
+        newParameter = oldParameter - step*grads_1d
         ##set the new parameter
         PINN.set_weights(newParameter)
         ##compute and record the total loss
-        loss_value, loss_u, loss_f = PINN.loss(PINN.X_u_train, PINN.u_train, PINN.X_f_train, record=True)
-        tf.print('{}th iteration: total loss: {}, COLO: {}, BC: {}'.format(len(PINN.loss_trace), loss_value, loss_f, loss_u))
+        loss_value, loss_u, loss_f = PINN.loss(PINN.X_u_train, PINN.u_train, PINN.X_f_train, record=False)
+        ##backtracking line search
+        i = 0
+        while (loss_value > PINN.loss_trace[-1]):
+            i+=1
+            step /= 2
+            newParameter = oldParameter - step*grads_1d
+            PINN.set_weights(newParameter)
+            loss_value, loss_u, loss_f = PINN.loss(PINN.X_u_train, PINN.u_train, PINN.X_f_train, record=False)
+        PINN.loss_trace.append(loss_value)
+        tf.print('{}th iteration: total loss: {}, COLO: {}, BC: {}, backtracking #: {}'.format(len(PINN.loss_trace)-1, loss_value, loss_f, loss_u, i))
         ##record cpu time
         PINN.clock.append(time.time()-PINN.start_time)
-        
+
+##it uses backtracking line search 
+def L2_optimizer(PINN, lr, n_iter, BC_ratio=1, Interior_ratio=1, alpha=0):
+     ##construct the minibatch object
+    minibatch = MiniBatch(PINN.X_f_train, PINN.X_u_train, PINN.u_train, BC_ratio, Interior_ratio)
+    ##append the initial loss to the loss_trace list
+    init_loss, init_u, init_f = PINN.loss(PINN.X_u_train, PINN.u_train, PINN.X_f_train, record=True)
+    tf.print('Initial total loss: {}, COLO: {}, BC: {}'.format(init_loss, init_u, init_f))
+    ##enter the loop
+    for i in range(n_iter):
+        ##construct a minibatch set
+        X_f_train, X_u_train, u_train, _, _, _ = minibatch.sample()
+        #compute the gradient using this minibatch
+        with tf.GradientTape() as tape:
+            tape.watch(PINN.trainable_variables)
+            loss_val, loss_u, loss_f = PINN.loss(X_u_train, u_train, X_f_train) 
+        grads = tape.gradient(loss_val, PINN.trainable_variables)
+        del tape 
+        grads_1d = [ ] #store 1d grads 
+        for j in range (len(PINN.layers)-1):
+            grads_w_1d = tf.reshape(grads[2*j],[-1]) #flatten weights 
+            grads_b_1d = tf.reshape(grads[2*j+1],[-1]) #flatten biases
+            grads_1d = tf.concat([grads_1d, grads_w_1d], 0) #concat grad_weights 
+            grads_1d = tf.concat([grads_1d, grads_b_1d], 0) #concat grad_biases
+        grads_1d = -grads_1d.numpy()
+        ##compute the L2 kernel matrix
+        with tf.GradientTape(persistent=True) as tape:
+            prediction = PINN.evaluate(X_f_train)
+        Jac = tape.jacobian(prediction, PINN.trainable_variables, experimental_use_pfor=False)
+        Jacobian = tf.concat([tf.reshape(Jac[i],[X_f_train.shape[0], -1]) for i in range(len(Jac))],axis=1)
+        numVars = Jacobian.shape[1]
+        In = np.eye(numVars)
+        kernel =  alpha*In + tf.transpose(Jacobian)@Jacobian
+        ##compute the L2 descent direction 
+        direction = np.linalg.inv(kernel)@grads_1d
+
+        oldParameter = PINN.get_weights().numpy()
+        step = lr
+        ##compute the new parameter, doing the descent operation
+        newParameter = oldParameter + step*direction
+        ##set the new parameter
+        PINN.set_weights(newParameter)
+        ##compute and record the total loss
+        loss_value, loss_u, loss_f = PINN.loss(PINN.X_u_train, PINN.u_train, PINN.X_f_train, record=False)
+        ##backtracking line search
+        i = 0
+        while (loss_value > PINN.loss_trace[-1]):
+            i+=1
+            step /= 2
+            newParameter = oldParameter + step*direction
+            PINN.set_weights(newParameter)
+            loss_value, loss_u, loss_f = PINN.loss(PINN.X_u_train, PINN.u_train, PINN.X_f_train, record=False)
+        PINN.loss_trace.append(loss_value)
+
+        tf.print('{}th iteration: total loss: {}, COLO: {}, BC: {}, backtracking #: {}'.format(len(PINN.loss_trace), loss_value, loss_f, loss_u, i))
+        ##record cpu time
+        PINN.clock.append(time.time()-PINN.start_time)
+
+##H1 NGD 
+##it uses backtracking line search 
+def H1_optimizer(PINN, lr, n_iter, BC_ratio=1, Interior_ratio=1, alpha=0):
+     ##construct the minibatch object
+    minibatch = MiniBatch(PINN.X_f_train, PINN.X_u_train, PINN.u_train, BC_ratio, Interior_ratio)
+    ##append the initial loss to the loss_trace list
+    init_loss, init_u, init_f = PINN.loss(PINN.X_u_train, PINN.u_train, PINN.X_f_train, record=True)
+    tf.print('Initial total loss: {}, COLO: {}, BC: {}'.format(init_loss, init_u, init_f))
+    ##compute the I + L
+    N = int(PINN.X_f_train.shape[0]**0.5)
+    L = NegLaplacian(N) + np.eye(N**2)
+    ##enter the loop
+    for i in range(n_iter):
+        ##construct a minibatch set
+        X_f_train, X_u_train, u_train, sample_index, _, _ = minibatch.sample()
+        #compute the gradient using this minibatch
+        with tf.GradientTape() as tape:
+            tape.watch(PINN.trainable_variables)
+            loss_val, loss_u, loss_f = PINN.loss(X_u_train, u_train, X_f_train) 
+        grads = tape.gradient(loss_val, PINN.trainable_variables)
+        del tape 
+        grads_1d = [ ] #store 1d grads 
+        for j in range (len(PINN.layers)-1):
+            grads_w_1d = tf.reshape(grads[2*j],[-1]) #flatten weights 
+            grads_b_1d = tf.reshape(grads[2*j+1],[-1]) #flatten biases
+            grads_1d = tf.concat([grads_1d, grads_w_1d], 0) #concat grad_weights 
+            grads_1d = tf.concat([grads_1d, grads_b_1d], 0) #concat grad_biases
+        grads_1d = -grads_1d.numpy()
+        ##compute the H1 kernel matrix
+        with tf.GradientTape(persistent=True) as tape:
+            prediction = PINN.evaluate(X_f_train)
+        Jac = tape.jacobian(prediction, PINN.trainable_variables, experimental_use_pfor=False)
+        Jacobian = tf.concat([tf.reshape(Jac[i],[X_f_train.shape[0], -1]) for i in range(len(Jac))],axis=1)
+        numVars = Jacobian.shape[1]
+        In = np.eye(numVars)
+        kernel =  alpha*In + tf.transpose(Jacobian)@L[sample_index][:,sample_index]@Jacobian
+        ##compute the L2 descent direction 
+        direction = np.linalg.inv(kernel)@grads_1d
+
+        oldParameter = PINN.get_weights().numpy()
+        step = lr
+        ##compute the new parameter, doing the descent operation
+        newParameter = oldParameter + step*direction
+        ##set the new parameter
+        PINN.set_weights(newParameter)
+        ##compute and record the total loss
+        loss_value, loss_u, loss_f = PINN.loss(PINN.X_u_train, PINN.u_train, PINN.X_f_train, record=False)
+        ##backtracking line search
+        i = 0
+        while (loss_value > PINN.loss_trace[-1]):
+            i+=1
+            step /= 2
+            newParameter = oldParameter + step*direction
+            PINN.set_weights(newParameter)
+            loss_value, loss_u, loss_f = PINN.loss(PINN.X_u_train, PINN.u_train, PINN.X_f_train, record=False)
+        PINN.loss_trace.append(loss_value)
+
+        tf.print('{}th iteration: total loss: {}, COLO: {}, BC: {}, backtracking #: {}'.format(len(PINN.loss_trace), loss_value, loss_f, loss_u, i))
+        ##record cpu time
+        PINN.clock.append(time.time()-PINN.start_time)
+
+    
 
 if __name__ == '__main__':
     print('hello')
