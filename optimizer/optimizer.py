@@ -427,7 +427,7 @@ def FR_optimizer(PINN, lr, n_iter, BC_ratio=1, Interior_ratio=1, alpha=0):
         Jac = tape.jacobian(prediction, PINN.trainable_variables, experimental_use_pfor=False)
         Jacobian = tf.concat([tf.reshape(Jac[i],[X_f_train.shape[0], -1]) for i in range(len(Jac))],axis=1)
         numVars = Jacobian.shape[1]
-        rho = np.array(prediction).flatten()[sample_index]
+        rho = np.array(prediction).flatten()
         In = np.eye(numVars)
         kernel =  alpha*In + (tf.transpose(Jacobian)*(1/rho))@Jacobian
         ##compute the FR NGD descent direction 
