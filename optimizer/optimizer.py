@@ -153,7 +153,7 @@ def L2_optimizer(PINN, lr, n_iter, BC_ratio=1, Interior_ratio=1, alpha=0):
 
 ##H1 NGD 
 ##it uses backtracking line search 
-def H1_optimizer(PINN, lr, n_iter, BC_ratio=1, Interior_ratio=1, alpha=0):
+def H1_optimizer(PINN, lr, n_iter, L, BC_ratio=1, Interior_ratio=1, alpha=0):
      ##construct the minibatch object
     minibatch = MiniBatch(PINN.X_f_train, PINN.X_u_train, PINN.u_train, BC_ratio, Interior_ratio)
     ##append the initial loss to the loss_trace list
@@ -161,7 +161,7 @@ def H1_optimizer(PINN, lr, n_iter, BC_ratio=1, Interior_ratio=1, alpha=0):
     tf.print('Initial total loss: {}, COLO: {}, BC: {}'.format(init_loss, init_u, init_f))
     ##compute the I + L
     N = int(PINN.X_f_train.shape[0]**0.5)
-    L = NegLaplacian(N) + np.eye(N**2)
+    L = L + np.eye(N**2)
     ##enter the loop
     for i in range(n_iter):
         ##construct a minibatch set
@@ -200,6 +200,7 @@ def H1_optimizer(PINN, lr, n_iter, BC_ratio=1, Interior_ratio=1, alpha=0):
         loss_value, loss_u, loss_f = PINN.loss(PINN.X_u_train, PINN.u_train, PINN.X_f_train, record=False)
         ##backtracking line search
         i = 0
+        ##takes about 0.05 sec each backtracking iteration
         while (loss_value > PINN.loss_trace[-1]):
             i+=1
             step /= 2
