@@ -287,8 +287,19 @@ def gridData(N, boundary=0):
 
     
 def plotData(X_f_train, X_u_train):
-    fig,ax = plt.subplots()
+    '''
+    Utility plotting function to show all the train data points.
 
+    Parameters
+    ----------
+    X_f_train : array-like
+        The array of all training points
+    X_u_train : array-like
+        The array of all boundary points
+    
+    '''
+
+    fig,ax = plt.subplots()
     plt.plot(X_u_train[:,0],X_u_train[:,1], '*', color = 'red', markersize = 5, label = 'Boundary points= {}'.format(X_u_train.shape[0]))
     plt.plot(X_f_train[:,0],X_f_train[:,1], 'o', markersize = 0.5, label = 'PDE collocation points = {}'.format(X_f_train.shape[0]-X_u_train.shape[0]))
 
