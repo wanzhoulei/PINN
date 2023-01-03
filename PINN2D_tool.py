@@ -457,7 +457,17 @@ class Sequentialmodel(tf.Module):
     
     def evaluate(self,x):
         '''
+        Evaluate the PINN on the points in x and returns the values as a numpy.ndarray
+
+        Parameters
+        ----------
+        x : numpy.ndarray
+            A numpy.ndarray of shape (n, 2), which contains n data points.
         
+        Returns
+        -------
+        a : tf.tensor
+            of shape (n,). It is the outputs of the PINN of the n inputs. 
         
         '''
         
