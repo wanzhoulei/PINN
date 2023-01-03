@@ -645,6 +645,23 @@ class Sequentialmodel(tf.Module):
         return loss, loss_u, loss_f 
     
     def optimizerfunc(self,parameters):
+        '''
+        this method sets the parameters of the PINN according to the input parameters. 
+        It returns the total loss and the gradient of the loss function w.r.t. the PINN parameters.
+
+        Parameters
+        ----------
+        parameters : numpy.ndarray 
+            1d numpy array that stores all the parameter values of the PINN (including the weights and biases of each layer)
+
+        Returns
+        -------
+        numpy.ndarray
+            The total loss of the PINN after updating the parameters. 
+        numpy.ndarray 
+            1d numpy array that stores the gradient of the loss function w.r.t. all parameters of PINN
+        
+        '''
         
         self.set_weights(parameters)
        
