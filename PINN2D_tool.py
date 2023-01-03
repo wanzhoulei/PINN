@@ -314,6 +314,53 @@ def plotData(X_f_train, X_u_train):
 #gamma is the weight for the boundary points
 # loss = gamma*loss_BC + (1-gamma)*loss_colocation
 class Sequentialmodel(tf.Module): 
+    '''
+    This class models the PINN neural network. It extends the tf.Module class
+    
+    ...
+    Attributes
+    ----------
+    W : list
+        A list of tf.tensorflow objects that store the weights and biases of the PINN each each layer
+    parameters : int
+        Number of parameters in the PINN. Weights and biases. 
+    loss_trace : list
+        A list of floats that keep records of the total loss of the PINN during optimization iterations.
+    seed : int
+        The random seed used to generate the initial parameter values.
+    layers : numpy.ndarray
+        The shape of the PINN. For example, if the PINN has 2 input nodes and 2 hidden layers with 30 nodes and 1 output node, 
+        then layers should be np.array([2, 30, 30, 1]).
+    N : int
+        The number of data points in each dimension in the frame.
+    X_f_train : numpy.ndarray
+        The array of all N**2 data points including BC points and colocation points. 
+    X_u_train : numpy.ndarray
+        The array of all boundary data points. 
+    u_train : numpy.ndarray
+        The array of the evaluation of the truth function at boundary points.
+    X_interior : numpy.ndarray
+        The array of the colocation points
+    gamma : float
+        The weight assigned to the boundary condition loss. The total loss is: loss = gamma*loss_BC + (1-gamma)*loss_colocation
+    start_time : float
+        The time when the optimization algorithm starts on the PINN
+    clock : list
+        A list of floats that keep records of the relative time of each iteration of optimization w.r.t. the start time
+        i.e. time(iteration) - start_time
+    boundary : float
+        The boundary condition. The value of the truth function at boundary points. 
+    X : numpy.ndarray
+        Stores the iterates only for lbfgs optimization. Initialized to all zero.
+    G : numpy.ndarray
+        Stores the gradients only for lbfgs optimization. Initialized to all zeros.
+    store : numpy.ndarray
+        Store computed values for plotting, only for lbfgs optimization.
+    iter_counter : int
+        Counter for the number of iterations, only for lbfgs optimization. 
+    
+    '''
+
     def __init__(self, layers, seed=0, N=40, gamma=1, boundary=0):
 
         self.W = []  #Weights and biases
