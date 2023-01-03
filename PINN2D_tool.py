@@ -1,4 +1,7 @@
+'''
+This module provides all functionalities to solve a 2d poisson equation using PINN.
 
+'''
 
 import tensorflow as tf
 import os
@@ -20,11 +23,13 @@ from optimizer.optimizer import *
 tf.random.set_seed(1234)
 
 ##data prep ===================================
+##create 256 by 256 test data points in the frame [-1, 1]
 x_1 = np.linspace(-1,1,256)  # 256 points between -1 and 1 [256x1]
 x_2 = np.linspace(1,-1,256)  # 256 points between 1 and -1 [256x1]
 
 X, Y = np.meshgrid(x_1,x_2) 
 
+#concatenate X, Y to form the test data set  
 X_u_test = np.hstack((X.flatten(order='F')[:,None], Y.flatten(order='F')[:,None]))
 
 # Domain bounds
@@ -33,40 +38,161 @@ ub = np.array([1, 1])  #upper bound
 
 ## u = sin(pi x)sin(pi y)
 def u1(x, y):
+    '''
+    The function u1(x,y) = sin(pi x)sin(pi y)
+
+    Parameters
+    ----------
+    x : float
+        The value in x direction to evaluate the function u1
+    y : float
+        The value in y direction to evaluate the function u1
+
+    Returns
+    -------
+    float
+        The value of function u1 at point (x, y)
+    
+    '''
     return np.sin( np.pi * x) * np.sin( np.pi * y)
 
 ##the divergence of u1, i.e. u1_xx + u1_yy
 def div1(x, y):
+    '''
+    The divergence of function u1(x,y) = sin(pi x)sin(pi y).
+    u1_xx + u1_xx evaluated at (x, y)
+
+    Parameters
+    ----------
+    x : float
+        The value in x direction to evaluate the divergence of function u1
+    y : float
+        The value in y direction to evaluate the divergence of function u1
+
+    Returns
+    -------
+    float
+        The divergence of function u1 at point (x, y)
+    
+    '''
+
     return -2*np.pi**2*np.sin(np.pi*x)*np.sin(np.pi*y)
 
 ##u = sin(pi x)sin(pi y) + sin(6pi x)sin(6pi y)
 def u2(x, y):
+    '''
+    The function u2(x,y) = sin(pi x)sin(pi y) + sin(6pi x)sin(6pi y)
+
+    Parameters
+    ----------
+    x : float
+        The value in x direction to evaluate the function u2
+    y : float
+        The value in y direction to evaluate the function u2
+
+    Returns
+    -------
+    float
+        The value of function u2 at point (x, y)
+    
+    '''
+
     return np.sin( np.pi * x) * np.sin( np.pi * y) + np.sin( 6*np.pi * x) * np.sin( 6*np.pi * y)
 
 ##divergence of u2
 def div2(x, y):
+    '''
+    The divergence of function u2(x,y) = sin(pi x)sin(pi y) + sin(6pi x)sin(6pi y)
+    u2_xx + u2_yy evaluated at point (x, y).
+
+    Parameters
+    ----------
+    x : float
+        The value in x direction to evaluate the divergence of function u2
+    y : float
+        The value in y direction to evaluate the divergence of function u2
+
+    Returns
+    -------
+    float
+        The divergence of function u2 at point (x, y)
+    
+    '''
+
     return -2*np.pi**2*np.sin(np.pi*x)*np.sin(np.pi*y) - 72*np.pi**2*np.sin(6*np.pi*x)*np.sin(6*np.pi*y)
 
 ##u3 = sin(pi x)sin(pi y) + sin(3pi x)sin(3pi y)
 def u3(x, y):
+    '''
+    The function u3(x,y) = sin(pi x)sin(pi y) + sin(3pi x)sin(3pi y)
+
+    Parameters
+    ----------
+    x : float
+        The value in x direction to evaluate the function u3
+    y : float
+        The value in y direction to evaluate the function u3
+
+    Returns
+    -------
+    float
+        The value of function u3 at point (x, y)
+    
+    '''
+
     return np.sin( np.pi * x) * np.sin( np.pi * y) + np.sin( 3*np.pi * x) * np.sin( 3*np.pi * y)
 
 def div3(x, y):
+    '''
+    The divergence of function u3(x,y) = sin(pi x)sin(pi y) + sin(3pi x)sin(3pi y)
+    u3_xx + u3_yy evaluated at point (x, y)
+
+    Parameters
+    ----------
+    x : float
+        The value in x direction to evaluate the divergence of function u3
+    y : float
+        The value in y direction to evaluate the diergence of function u3
+
+    Returns
+    -------
+    float
+        The divergence of function u3 at point (x, y)
+    
+    '''
+
     return -2*np.pi**2*np.sin(np.pi*x)*np.sin(np.pi*y) - 18*np.pi**2*np.sin(3*np.pi*x)*np.sin(3*np.pi*y)
 
 ##add constant 3 to u3
 def u4(x, y):
+    '''
+    The function u4(x,y) = sin(pi x)sin(pi y) + sin(3pi x)sin(3pi y) + 3
+
+    Parameters
+    ----------
+    x : float
+        The value in x direction to evaluate the function u4
+    y : float
+        The value in y direction to evaluate the function u4
+
+    Returns
+    -------
+    float
+        The value of function u4 at point (x, y)
+    
+    '''
+
     return np.sin( np.pi * x) * np.sin( np.pi * y) + np.sin( 3*np.pi * x) * np.sin( 3*np.pi * y) + 3
 
 ##change these two lines if you want to use other functions
-func_RHS = u4
-div = div3
-min_val = 1; max_val=5
+func_RHS = u4 ##set this variable to the function of true solution
+div = div3 ##set this variable to be the divergence of the above function 
+min_val = 1; max_val=5 ##set the minimum and maximum values of the function 
 
-##change this line if you want to change the PDE
+#generate the truth solution
 usol = func_RHS(X, Y) #solution chosen for convinience  
-
 u = usol.flatten('F')[:,None] 
+##set hyperparameters for lbfgs
 max_iter = 200000
 maxcor = 200
 
@@ -422,7 +548,7 @@ class Sequentialmodel(tf.Module):
 def Identity(x):
     return np.eye(x.shape[0])
 
-def L2Kernel(PINN, X_f_train, alpha=1):
+def L2Kernel(PINN, X_f_train, alpha=0):
     def func(X):
         with tf.GradientTape(persistent=True) as tape:
             prediction = PINN.evaluate(X_f_train)
@@ -585,6 +711,8 @@ def layertostr(layers):
     return s
 
 if __name__ == '__main__':
-    X_f_train, X_u_train, u_train = gridData(7)
+    X_f_train, X_u_train, u_train = gridData(10)
     minibatch = MiniBatch(X_f_train, X_u_train, u_train, 0.5, 0.5)
     X_f, X_u, u, sample, sample_BC, sample_interior = minibatch.sample()
+
+
