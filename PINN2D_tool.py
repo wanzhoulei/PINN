@@ -358,6 +358,32 @@ class Sequentialmodel(tf.Module):
         Store computed values for plotting, only for lbfgs optimization.
     iter_counter : int
         Counter for the number of iterations, only for lbfgs optimization. 
+
+    Methods
+    -------
+    evaluate(x)
+        Input x to the PINN and returns the evaluation of the PINN on x
+    get_weights()
+        Get all parameters (weights and biases) as a 1d numpy.ndarray.
+    set_weights(parameters)
+        Set the parameters of the PINN (all weights and bias) according to intput parameters.
+    loss_BC(x,y)
+        Compute and return the loss_BC, the loss induced by the violation of the boundaty conditions.
+    loss_PDE(x_to_train_f)
+        Compute and return the loss_colocation. the loss induced by the colacation points.
+    loss(x,y,g, record = False)
+        Compute and return the total loss. Record the loss if record is true. 
+    optimizerfunc(parameters)
+        Set the parameters of the PINN by parameters. Compute and return the total loss and the gradient of loss function 
+        w.r.t. all parameters as a 1d numpy.ndarray.
+    optimizer_callback(parameters)
+        Call back function for optimizers. 
+    optimizer_callback_lbfg(parameters)
+        Call back function for lbfgs optimizer
+    LbfgsInvHessProduct(parameters)
+        Compute and store the inverse Hessian product, only for lbfgs optimizer. 
+    adaptive_gradients()
+        Utility function that computes and returns the total loss and the gradient of the loss function w.r.t all parameters.      
     
     '''
 
@@ -378,7 +404,7 @@ class Sequentialmodel(tf.Module):
             The weight imposed on the boundary consition loss
         boundary : float, default=0
             The boundary value of the truth function   
-        
+
         '''
 
         self.W = []  #Weights and biases
@@ -430,6 +456,10 @@ class Sequentialmodel(tf.Module):
         self.iter_counter = 0 # iteration counter for optimizer
     
     def evaluate(self,x):
+        '''
+        
+        
+        '''
         
         #preprocessing input 
         x = (x - lb)/(ub - lb) #feature scaling
@@ -611,42 +641,6 @@ class Sequentialmodel(tf.Module):
             return grad
 
         alpha, _, _, fnewval, _, _ = scipy.optimize.line_search(ls_function, ls_gradient, x_k, p_k, gfk = g_k, maxiter = 50, c1=1e-4, c2=0.9)
-        
-        
-        """
-        Class
-        -------------
-
-        class scipy.optimize.LbfgsInvHessProduct(*args, **kwargs)
-
-        sk = array_like, shape=(n_corr, n)
-        Array of n_corr most recent updates to the solution vector.
-
-        yk = array_like, shape=(n_corr, n)
-        Array of n_corr most recent updates to the gradient.
-
-        Methods
-        -------------
-
-        __call__(self, x)  Call self as a function.
-
-        adjoint(self)      Hermitian adjoint.
-
-        dot(self, x)       Matrix-matrix or matrix-vector multiplication.
-
-        matmat(self, X)    Matrix-matrix multiplication.
-
-        matvec(self, x)    Matrix-vector multiplication.
-
-        rmatmat(self, X)   Adjoint matrix-matrix multiplication.
-
-        rmatvec(self, x)   Adjoint matrix-vector multiplication.
-
-        todense(self)      Return a dense array representation of this operator.
-
-        transpose(self)    Transpose this linear operator.
-
-        """
         
         
     def adaptive_gradients(self):
