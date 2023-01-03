@@ -242,8 +242,6 @@ def trainingdata(N_u,N_f):
     X_u_train = all_X_u_train[idx[0:N_u], :] #choose indices from  set 'idx' (x,t)
     u_train = all_u_train[idx[0:N_u],:]      #choose corresponding u
     
-    '''Collocation Points'''
-
     # Latin Hypercube sampling for collocation points 
     # N_f sets of tuples(x,t)
     X_f = lb + (ub-lb)*lhs(2,N_f) 
@@ -252,6 +250,31 @@ def trainingdata(N_u,N_f):
     return X_f_train, X_u_train, u_train 
 
 def gridData(N, boundary=0):
+    '''
+    gridData method creates and returns evenly distributed gridpoints in the frame [-1, 1]*[-1, 1] as the training data.
+
+    Parameters
+    ----------
+    N : int
+        The number of gridpoints in each dimension. For example, N=40 means to draw 40 by 40 points in the frame.
+    boundary : float, optional, default=0
+        The boundary condition. The value of the truth function at the boundary points. 
+        Default is to impose zero boundary condition.
+
+    Returns
+    -------
+    X_f_train : numpy.ndarray
+        2d numpy.ndarray of shape (N^2, 2). It contains all the N by N evenly distributed gridpoints in the frame. 
+        The order the data points are aligned is important. Suppose the N by N data points of the frame form a matrix in 2d. 
+        This method append data points columnwise. i.e. it gos through the data points matrix column by column from lower to 
+        upper and from left to right. 
+    X_u_train : numpy.ndarray
+        2d numpy.ndarray of shape (N^2 - (N-2)^2, 2). It contains all the boundary condition points in the frame. 
+        The ordering is the same as described above but only contains the boundary points. 
+    u_train : numpy.ndarray
+        1d numpy.ndarray of shape (N^2 - (N-2)^2,). It contains the evaluation of the truth function at the boundary points.
+    
+    '''
     dx = 2/float(N-1)
     X_f_train = []
     for i in range(N):
