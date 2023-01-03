@@ -538,6 +538,22 @@ class Sequentialmodel(tf.Module):
 
             
     def loss_BC(self,x,y):
+        '''
+        Computes and returns the MSE of the evaluation of the PINN on boundary points.
+
+        Parameters
+        ----------
+        x : numpy.ndarray
+            The array of the boundary condition points to evaluate at
+        y : array-like
+            The array of the boundary truth values at the corresponding boundary points
+
+        Returns
+        -------
+        loss_u : tf.tensor
+            The loss value. i.e. the MSE of the evaluation of the PINN on boundary points
+        
+        '''
 
         loss_u = tf.reduce_mean(tf.square(y-self.evaluate(x)))
         return loss_u
@@ -849,10 +865,3 @@ def layertostr(layers):
     for i in range(1, len(layers)):
         s += '-' + str(layers[i])
     return s
-
-if __name__ == '__main__':
-    X_f_train, X_u_train, u_train = gridData(10)
-    minibatch = MiniBatch(X_f_train, X_u_train, u_train, 0.5, 0.5)
-    X_f, X_u, u, sample, sample_BC, sample_interior = minibatch.sample()
-
-
