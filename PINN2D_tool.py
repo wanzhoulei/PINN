@@ -364,7 +364,7 @@ class Sequentialmodel(tf.Module):
     evaluate(x)
         Input x to the PINN and returns the evaluation of the PINN on x
     get_weights()
-        Get all parameters (weights and biases) as a 1d numpy.ndarray.
+        Get all parameters (weights and biases) as a 1d tf.tensor.
     set_weights(parameters)
         Set the parameters of the PINN (all weights and bias) according to intput parameters.
     loss_BC(x,y)
@@ -486,6 +486,16 @@ class Sequentialmodel(tf.Module):
         return a
     
     def get_weights(self):
+        '''
+        This methods returns all parameters of the PINN (weights and biases of each layer).
+        These parameters are flattened into 1d array.
+
+        Returns
+        -------
+        parameters_1d : tf.tensor
+            1d tensor that stores all parameters values of the PINN (weights and biases of each layer)
+        
+        '''
 
         parameters_1d = []  # [.... W_i,b_i.....  ] 1d array
         
@@ -500,6 +510,15 @@ class Sequentialmodel(tf.Module):
         return parameters_1d
         
     def set_weights(self,parameters):
+        '''
+        This method sets the parameters of the PINN (weights and biases of every layer)
+
+        Parameters
+        ----------
+        parameters : numpy.ndarray
+            1d numpy.ndarray that contains the values of the parameters of the PINN.
+
+        '''
                 
         for i in range (len(self.layers)-1):
 
