@@ -559,6 +559,23 @@ class Sequentialmodel(tf.Module):
         return loss_u
 
     def loss_PDE(self, x_to_train_f):
+        '''
+        Computes and returns the loss_colocation. Given the divergence function, it computes the MSE of the divergence 
+        of the PINN on colocation points as the loss value.
+
+        Parameters
+        ----------
+        x_to_train_f : numpy.ndarray
+            The numpy.array that stores all the data points (including the BC points and the colocation points)
+        
+        Returns
+        -------
+        loss_f : tf.tensor
+            The MSE of the divergence of the PINN
+        f : tf.tensor
+            The residual of the divergences of the PINN with the truth divergence
+        
+        '''
     
         g = tf.Variable(x_to_train_f, dtype = 'float64', trainable = False)
 
@@ -591,6 +608,32 @@ class Sequentialmodel(tf.Module):
         return loss_f, f
     
     def loss(self,x,y,g, record = False):
+        '''
+        Computes and returns the total loss, boundary condition loss and colocation loss of the PINN.
+        Record the loss if the record flag is set to True. 
+
+        Parameters
+        ----------
+        x : numpy.ndarray
+            The numpy array of all the boundary points 
+        y : numpy.ndarray
+            The numpy array of the truth value of the function on the corresponding boundary points
+        g : numpy.ndarray
+            The numpy array of all the data points  (including the BC points and the colocation points)
+        record : bool, default=False
+            If set to True, the total loss will be stored in the loss_trace attribute
+
+        Returns
+        -------
+        loss : tf.tensor
+            The total loss. Which is a linear combination of the loss_BC and loss_colocation.
+            loss = gamma*loss_BC + (2-gamma)*loss_colocation
+        loss_u : tf.tensor
+            The loss_colocation. The MSE of the divergences on the colocation points.
+        loss_f : tf.tensor
+            The loss_BC, the MSE of the evaluation of the PINN on boundary points.
+
+        '''
 
         loss_u = self.loss_BC(x,y)
         loss_f, f = self.loss_PDE(g)
