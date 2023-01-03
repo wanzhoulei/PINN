@@ -198,6 +198,28 @@ maxcor = 200
 
 ## Training data ==================================
 def trainingdata(N_u,N_f):
+    '''
+    trainingdata method constructs the train set of 2d data points for the PINN model. 
+    It evenly selects boundary points to form the boundary data set and use Latin Hypercube Sampling to generate colocation data points.
+
+    Parameters
+    ----------
+    N_u : int
+        The number of boundary condition points to include.
+    N_f : int
+        The number of colocation points to include.
+
+    Returns
+    -------
+    X_f_train : numpy.ndarray
+        2d numpy.ndarray of shape (N_f+N_u, 2). It contains all generated boundary condition points and colocation points.
+        BC points come after the colocation points.
+    X_u_train : numpy.ndarray
+        2d numpy.ndarray of shape (N_u, 2). It contains all generated boudary points.
+    u_train : numpy.ndarray
+        1d numpy.ndarray of shape (N_u,). It is the booundary condition and contains all truth value of the function at boundary.
+
+    '''
     
     leftedge_x = np.hstack((X[:,0][:,None], Y[:,0][:,None]))
     leftedge_u = usol[:,0][:,None]
@@ -239,10 +261,6 @@ def gridData(N, boundary=0):
     X_u_train = np.array([point for point in X_f_train if (abs(abs(point[0])-1)<1e-4 or abs(abs(point[1])-1)<1e-4)])
     u_train = np.zeros((X_u_train.shape[0], 1))+boundary
     return X_f_train, X_u_train, u_train
-
-# N = 40
-# X_f_train, X_u_train, u_train = gridData(N)
-# layers = np.array([2, 20, 20, 1]) #2 hidden layers
 
     
 def plotData(X_f_train, X_u_train):
