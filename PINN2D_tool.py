@@ -362,6 +362,24 @@ class Sequentialmodel(tf.Module):
     '''
 
     def __init__(self, layers, seed=0, N=40, gamma=1, boundary=0):
+        '''
+        Constructor for the Sequentialmodel class. It sets the initial values of all attributes. 
+        It initializes the parameters values of PINN using the random seed. It utilizes the Xavier normal distribution. 
+
+        Parameters
+        ----------
+        layers : numpy.ndarray
+            The shape of the neural network
+        seed : int, default=0
+            The random seed used to initilaize the parameters
+        N : int, default=40
+            The number of data points in each dimension in the frame
+        gamma : float, default=1
+            The weight imposed on the boundary consition loss
+        boundary : float, default=0
+            The boundary value of the truth function   
+        
+        '''
 
         self.W = []  #Weights and biases
         self.parameters = 0 #total number of parameters
