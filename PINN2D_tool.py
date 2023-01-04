@@ -925,6 +925,32 @@ def H1Kernel(PINN, N, X_f_train, alpha=0):
     return func
 
 def H1semiKernel(PINN, N, X_f_train, alpha=0):
+    '''
+    This decorator that returns the function that computes the H1 seminorm kernel of the PINN.
+    Suppose the jacobian of the evaluations of the PINN on all grid points w.r.t. all parameters is J. 
+    Then the H1 seminorm kernel matrix is alpha*In + J.T L J
+    where alpha is the damping factor and L is the negative laplacian matrix
+    more detailed description can be found in the documentation.ipynb file
+
+    Parameters
+    ----------
+    PINN : Sequentialmodel
+        The PINN object we want to compute the kernel at
+    N : int 
+        the number of grid points in each dimension 
+    X_f_train : numpy.ndarray
+        The numpy array of all grid data points. 
+    alpha : float, default=0
+        The damping factor added to the kernel 
+
+    Returns
+    -------
+    func : function 
+        A function that takes a required argument, of which the content is not important, and returns the 
+        H1 seminorm kernel of the PINN with specified damping factor 
+
+    '''
+
     L = NegLaplacian(N)
     def func(X):
         with tf.GradientTape(persistent=True) as tape:
