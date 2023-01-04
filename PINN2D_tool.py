@@ -963,6 +963,31 @@ def H1semiKernel(PINN, N, X_f_train, alpha=0):
     return func
 
 def HinvKernel(PINN, N, X_f_train, alpha=0):
+    '''
+    A decorator that returns the function that computes and returns the H-1 kernel matrix.
+    Suppose the Jacobian of the evaluation of a PINN on all grid points w.r.t. all parameters is J.
+    Then the H-1 kernel is: alpha*In + J.T (In + L)^-1 J
+    where alpha is the damping factor and L is the negative laplacian matrix
+
+    Parameters
+    ----------
+    PINN : Sequentialmodel
+        The PINN object we want to compute the kernel at
+    N : int 
+        the number of grid points in each dimension 
+    X_f_train : numpy.ndarray
+        The numpy array of all grid data points. 
+    alpha : float, default=0
+        The damping factor added to the kernel 
+
+    Returns
+    -------
+    func : function 
+        A function that takes a required argument, of which the content is not important, and returns the 
+        H-1 kernel of the PINN with specified damping factor 
+    
+    '''
+
     L = NegLaplacian(N)
     In = np.eye(N**2)
     LIninv = np.linalg.inv(In + L)
@@ -977,6 +1002,31 @@ def HinvKernel(PINN, N, X_f_train, alpha=0):
     return func
 
 def HinvsemiKernel(PINN, N, X_f_train, alpha):
+    '''
+    A decorator that returns the function that computes and returns the H-1 seminorm kernel matrix.
+    Suppose the Jacobian of the evaluation of a PINN on all grid points w.r.t. all parameters is J.
+    Then the H-1 kernel is: alpha*In + J.T L^-1 J
+    where alpha is the damping factor and L is the negative laplacian matrix
+
+    Parameters
+    ----------
+    PINN : Sequentialmodel
+        The PINN object we want to compute the kernel at
+    N : int 
+        the number of grid points in each dimension 
+    X_f_train : numpy.ndarray
+        The numpy array of all grid data points. 
+    alpha : float, default=0
+        The damping factor added to the kernel 
+
+    Returns
+    -------
+    func : function 
+        A function that takes a required argument, of which the content is not important, and returns the 
+        H-1 seminorm kernel of the PINN with specified damping factor 
+    
+    '''
+
     L = NegLaplacian(N)
     Linv = np.linalg.inv(L)
     def func(X):
