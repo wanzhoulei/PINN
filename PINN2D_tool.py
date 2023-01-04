@@ -1078,6 +1078,32 @@ def FRKernel(PINN, X_f_train, alpha=0):
 
 #W2 NGD kernel matrix 
 def W2Kernel(PINN, N, alpha=0):
+    '''
+    A decorator that returns the function that computes and returns the W2 kernel matrix.
+    Suppose the Jacobian of the evaluation of a PINN on all grid points w.r.t. all parameters is J.
+    Then the W2 kernel is: alpha*In + J.T (C.T u C)^-1 J
+    where alpha is the damping factor and L is the negative laplacian matrix.
+    C is the divergence operator matrix and u is a diagonal matrix with the evaluation of PINN
+    on the entire data points repeating twice on the diagonal.
+    More detailed description can be found in the documentation.ipynb file
+
+    Parameters
+    ----------
+    PINN : Sequentialmodel
+        The PINN object we want to compute the kernel at
+    N : int 
+        the number of grid points in each dimension 
+    alpha : float, default=0
+        The damping factor added to the kernel 
+
+    Returns
+    -------
+    func : function 
+        A function that takes a required argument, of which the content is not important, and returns the 
+        W2 kernel of the PINN with specified damping factor 
+    
+    '''
+
     dx = 2/(N-1)
     C = Cn(N, dx, dx)
     def func(X):
