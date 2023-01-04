@@ -1119,7 +1119,24 @@ def W2Kernel(PINN, N, alpha=0):
     return func
 
 ##plotting methods
-def solutionplot(u_pred, usol, savepath=None):
+def solutionplot(u_pred, usol, savepath=None): 
+    '''
+    Utility method that plots the 2D truth solution, 2D predition of the PINN and the absolute error between the truth and prediction.
+    It saves the plot to the path specified in savepath if it is not none.
+
+    Parameters
+    ----------
+    u_pred : numpy.ndarray
+        A numpy matrix of shape (256, 256) that is the evaluation of the PINN at the 256 by 256 grid points specified
+        earlier in this file.
+    usol : numpy.ndarray
+        A numpy matrix of shape (256, 256) that is the evaluation of the truth function at the 256 by 256 grid points 
+        specified earlier in this file.
+    savepath : string, optional, default=None
+        The path to store the plot. If None, the plot will not be stored. 
+    
+    '''
+
     #color map
     cmap = cm.get_cmap('jet')
     normalize = colors.Normalize(vmin=min_val, vmax=max_val)
@@ -1155,6 +1172,21 @@ def solutionplot(u_pred, usol, savepath=None):
 
 #utility function 
 def layertostr(layers):
+    '''
+    Utility method that returns a string representation of a layer. 
+    For example for layer shape np.array([2, 30, 20, 1]) it will return 2-30-20-1
+
+    Parameters
+    ----------
+    layers : numpy.ndarray
+        the 1d numpy array that represents the shape of a PINN. 
+    
+    Returns
+    -------
+    s : string
+        The string representation of the layer shape
+
+    '''
     s = str(layers[0])
     for i in range(1, len(layers)):
         s += '-' + str(layers[i])
