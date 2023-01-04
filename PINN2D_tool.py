@@ -818,6 +818,28 @@ def L2Kernel(PINN, X_f_train, alpha=0):
 #N is the number of grid points in one dim including the boundary points
 #N-2 is the number of colocation grid points in one dim  
 def Cn(N, dx, dy):
+    '''
+    This method computes and returns the divergence operator matrix C. (using finite differentiation)
+    Suppose f is a 2d vector function. C acting on the output of f is equivalent to taking the y directional and then x directional derivative.
+    Detailed description can be found in the documentation.ipynb file.
+
+    Parameters
+    ----------
+    N : int
+        The number of data points in one dimension. The number of entire data points is then N**2.
+        The vector function we want to take the divergence of then has shape f: R^2 ---> R^{N**2}.
+    dx : float
+        The horizontal distance between each discretized grid points in the frame.
+    dy : float
+        The vertical distance between each discretized grid points in the frame.
+
+    Returns
+    -------
+    numpy.ndarray
+        A (2N^2, N^2) numpy matrix, that is the discretized divergence operator.
+
+    '''
+
     ones = np.ones(N-2);
     diags = np.array([-1, 1]);
     data = [-ones, ones];
