@@ -687,11 +687,9 @@ class Sequentialmodel(tf.Module):
         return loss_val.numpy(), grads_1d.numpy()
 
     def optimizer_callback(self,parameters):
-                
+        
         loss_value, loss_u, loss_f = self.loss(self.X_u_train, self.u_train, self.X_f_train, record=True)
         
-        u_pred = self.evaluate(X_u_test)
-        error_vec = np.linalg.norm((u-u_pred),2)/np.linalg.norm(u,2)
         self.clock.append(time.time()-self.start_time)
         
         tf.print('{}th iteration: total loss: {}, COLO: {}, BC: {}'.format(len(self.loss_trace), loss_value, loss_f, loss_u))
@@ -700,8 +698,6 @@ class Sequentialmodel(tf.Module):
                 
         loss_value, loss_u, loss_f = self.loss(self.X_u_train, self.u_train, self.X_f_train, record=True)
         
-        u_pred = self.evaluate(X_u_test)
-        error_vec = np.linalg.norm((u-u_pred),2)/np.linalg.norm(u,2)
         self.clock.append(time.time()-self.start_time)
         
         tf.print('{}th iteration: total loss: {}, COLO: {}, BC: {}'.format(self.iter_counter, loss_value, loss_f, loss_u))
