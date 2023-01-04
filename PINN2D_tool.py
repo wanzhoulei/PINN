@@ -1040,6 +1040,31 @@ def HinvsemiKernel(PINN, N, X_f_train, alpha):
     return func
 
 def FRKernel(PINN, X_f_train, alpha=0):
+    '''
+    A decorator that returns the function that computes and returns the Fisher-Rao kernel matrix.
+    Suppose the Jacobian of the evaluation of a PINN on all grid points w.r.t. all parameters is J.
+    Then the Fisher-Rao kernel is: alpha*In + J.T (1/rho) J
+    where alpha is the damping factor and L is the negative laplacian matrix
+    (1/rho) is a diagonal matrix with the inverse of evaluation of PINN on each grid points on the diagonal.
+    More detailed description can be found  in the documentation.ipynb file. 
+
+    Parameters
+    ----------
+    PINN : Sequentialmodel
+        The PINN object we want to compute the kernel at
+    X_f_train : numpy.ndarray
+        The numpy array of all grid data points. 
+    alpha : float, default=0
+        The damping factor added to the kernel 
+
+    Returns
+    -------
+    func : function 
+        A function that takes a required argument, of which the content is not important, and returns the 
+        Fisher-Rao kernel of the PINN with specified damping factor 
+    
+    '''
+
     def func(X):
         with tf.GradientTape(persistent=True) as tape:
             prediction = PINN.evaluate(X_f_train)
