@@ -707,6 +707,18 @@ class Sequentialmodel(tf.Module):
         tf.print('{}th iteration: total loss: {}, COLO: {}, BC: {}'.format(len(self.loss_trace), loss_value, loss_f, loss_u))
     
     def optimizer_callback_lbfg(self,parameters):
+        '''
+        callback function only for lbfgs optimizer.
+        It computes the total loss, loss_BC and loss_colocation. 
+        Records the relative cpu time in the clock attribute. 
+        Print out all loss.
+
+        Parameters
+        ----------
+        parameters : numpy.ndarray
+            1d numpy.ndarray that stores the parameters of the PINN.
+        
+        '''
                 
         loss_value, loss_u, loss_f = self.loss(self.X_u_train, self.u_train, self.X_f_train, record=True)
         
