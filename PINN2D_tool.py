@@ -836,7 +836,9 @@ def Cn(N, dx, dy):
     Returns
     -------
     numpy.ndarray
-        A (2N^2, N^2) numpy matrix, that is the discretized divergence operator.
+        A (2(N-2)^2, (N-2)^2) numpy matrix, that is the discretized divergence operator.
+        Note that it is (N-2)^2 instead of N^2 because the matrix only acts on the evaluation of the function on interior points.
+        It also assumes zero boundary condition. 
 
     '''
 
@@ -850,6 +852,24 @@ def Cn(N, dx, dy):
     return np.concatenate((A1, A2), axis=0);
 
 def NegLaplacian(N):
+    '''
+    This matrix computes and returns the negative laplacian operator L for the PINN.
+    For a 2d vector function, this matrix L acting on the output will turn each entry into negative laplacian. 
+    i.e. for the entry ui in the output, after applying L it will become -(ui_xx + ui_yy)
+    Detailed description of how it is constructed will be outlined in the documentation.ipynb file.
+
+    Parameters
+    ----------
+    N : int
+        The number of grid points in each dimension in the discretized frame.
+
+    Returns
+    -------
+    L : numpy.ndarray
+        numpy matrix of shape (N^2, N^2), that is the discretized version of negative laplacian operator.
+    
+    '''
+
     dx = 2/(N-1)
     C = Cn(N, dx, dx)
     CTC = C.T @ C
