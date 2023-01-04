@@ -768,9 +768,42 @@ class Sequentialmodel(tf.Module):
 
 ##kernels
 def Identity(x):
+    '''
+    returns an identity matrix. It is used to do std Gradient Descent using the newton-cg framework.
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        Should be the parameter arrays of the PINN with shape (numParameters, ).
+        In practise, we only need the shape to match the number of parameters. 
+
+    '''
     return np.eye(x.shape[0])
 
 def L2Kernel(PINN, X_f_train, alpha=0):
+    '''
+    A decorator that returns a function that computes the L2 kernel of the PINN.
+    Suppose the Jacobian of the neural network evaluated at each grid point w.r.t. all parameters is J (N**2, numVar).
+    Then the L2 kernel is alpha*In + J.T J, where alpha is a damping factor.
+
+    Parameters
+    ----------
+    PINN : Sequentialmodel 
+        Sequantialmodel object. An instantiated PINN on which we want to compute the L2 kernel.
+    X_f_train : numpy.ndarray
+        The (N**2, 2) numpy array of the entire grid data points including the BC points and colocation points. 
+    alpha : float, default=0
+        The damping factor we want to impose on the L2 kernel
+
+    Returns
+    -------
+    func : function 
+        A function that takes one required input and returns the L2 kernel of the PINN specified. With the data points and 
+        damping factor specified in the decorator. The content of the input X is not important. The returned function 
+        is only supposed to be used in the newton-cg framework to compute the L2 NGD.
+    
+    '''
+    
     def func(X):
         with tf.GradientTape(persistent=True) as tape:
             prediction = PINN.evaluate(X_f_train)
