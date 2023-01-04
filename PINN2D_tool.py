@@ -886,6 +886,32 @@ def NegLaplacian(N):
     return L
 
 def H1Kernel(PINN, N, X_f_train, alpha=0):
+    '''
+    A decorator that returns a function that computes the H1 kernel of the PINN.
+    Suppose the Jacobian of the evaluation of PINN on all grid data points w.r.t. all parameters is J,
+    then the H1 kernel is then alpha*In + J.T (In + L) J
+    where alpha is a damping factor and L is the negative laplacian matrix. 
+    More detailed description can be found in the documentation.ipynb file.
+
+    Parameters
+    ----------
+    PINN : Sequentialmodel
+        A PINN object on which to compute the H1 kernel
+    N : int
+        The number of grid data points in each dimension in the frame.
+    X_f_train : numpy.ndarray
+        numpy matrix of shape (N^2, 2) that contails all grid data points including BC points and colocation points
+    alpha : float, default=0
+        The damping factor that adds to the kernel
+
+    Returns
+    -------
+    func : function 
+        A function that takes a required input, of which the content is not important, and returns the H2 kernel matrix.
+        of the specified PINN and damping factor. It is only supposed to be used in the newton-cg optimization framework.
+
+    '''
+
     L = NegLaplacian(N)
     def func(X):
         with tf.GradientTape(persistent=True) as tape:
