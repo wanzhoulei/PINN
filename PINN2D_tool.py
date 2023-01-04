@@ -382,8 +382,6 @@ class Sequentialmodel(tf.Module):
         Call back function for lbfgs optimizer
     LbfgsInvHessProduct(parameters)
         Compute and store the inverse Hessian product, only for lbfgs optimizer. 
-    adaptive_gradients()
-        Utility function that computes and returns the total loss and the gradient of the loss function w.r.t all parameters.      
     
     '''
 
@@ -767,18 +765,6 @@ class Sequentialmodel(tf.Module):
 
         alpha, _, _, fnewval, _, _ = scipy.optimize.line_search(ls_function, ls_gradient, x_k, p_k, gfk = g_k, maxiter = 50, c1=1e-4, c2=0.9)
         
-        
-    def adaptive_gradients(self):
-
-        with tf.GradientTape() as tape:
-            tape.watch(self.W)
-            loss_val = self.loss(self.X_u_train, self.u_train, self.X_f_train)
-
-        grads = tape.gradient(loss_val,self.W)
-
-        del tape
-
-        return loss_val, grads
 
 ##kernels
 def Identity(x):
