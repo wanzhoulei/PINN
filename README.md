@@ -36,5 +36,10 @@ In this repository, we use physically imposed neural network to solve Poisson eq
     - Hinvsemi_2dPoisson_mini.py
     - FR_2dPoisson_mini.py
 
+## Files and Repository Description
+- documentation.ipynb
+    All detailed documentations of all methods and experiments will be here, including discretization methods, optimization framework. 
+- PINN_tool.py
+    The toolsets used to solve 1d Poisson Equation. It defines the truth poisson solution, the PINN class, the functionalities to create discretized data points. It also defines various kernel matrix for natural gradient descent, (L2, H1, H-1, H1 semi, H-1 semi, Fisher-Rao, W2), which are used in the newton-cg optimization framework. (This part will be covered more in detail in the documentation.ipynb file).
 
 
