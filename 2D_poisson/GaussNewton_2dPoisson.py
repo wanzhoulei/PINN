@@ -22,8 +22,8 @@ random_seed = 0 #set the random seed for generating the initial parameters of PI
 
 N = 50 ##use N by N grid points
 layers = np.array([2, 20, 30, 20, 1]) #2 hidden layers
-X_f_train, X_u_train, u_train = gridData(N)
 
+X_f_train, X_u_train, u_train = gridData(N)
 PINN = 0
 if read_picke is not None:
     with open(read_picke, 'rb') as f:
@@ -31,7 +31,7 @@ if read_picke is not None:
 else:
     PINN = Sequentialmodel(layers, seed=random_seed, N=N, gamma=gamma)
 init_params = PINN.get_weights().numpy()
-kernel = L2Kernel(PINN, X_f_train, alpha=0)
+kernel = L2Kernel(PINN, X_f_train, alpha=alpha)
 
 # train the model with Scipy newton-cg optimizer to run L2 GD
 s = time.time()
