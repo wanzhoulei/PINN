@@ -1,3 +1,8 @@
+'''
+This module provides all functionalities to solve a 1d poisson equation using PINN.
+
+'''
+
 import tensorflow as tf
 import datetime, os
 #hide tf logs 
@@ -13,7 +18,6 @@ import time
 from pyDOE import lhs         #Latin Hypercube Sampling
 
 # generates same random numbers each time
-np.random.seed(1234)
 tf.random.set_seed(1234)
 
 # DATA PREPARATION ===================
@@ -33,8 +37,6 @@ u = tf.reshape(u,(100,1)) ##truth solution
 ##N_f is the number of collocation points
 def trainingdata(N_f, sample=True):
 
-    '''Boundary Conditions'''
-
     #Left egde (x = -π and u = 0)
     leftedge_x = -np.pi
     leftedge_u = 0
@@ -45,8 +47,6 @@ def trainingdata(N_f, sample=True):
 
     X_u_train = np.vstack([leftedge_x, rightedge_x]) # X_u_train [2,1]
     u_train = np.vstack([leftedge_u, rightedge_u])   #corresponding u [2x1]
-
-    '''Collocation Points'''
 
     if sample:
         # Latin Hypercube sampling for collocation points 
@@ -62,20 +62,21 @@ def trainingdata(N_f, sample=True):
     #u_train is the truth value of the PDE at boundary points
     return X_f_train, X_u_train, u_train 
 
-N_f = 1000 #Total number of collocation points 
-# Training data
-X_f_train, X_u_train, u_train = trainingdata(N_f, sample=False)
-layers = np.array([1,20, 20,1]) #2 hidden layers
 
 # PINN CLASS ===============================
 class Sequentialmodel(tf.Module): 
-    def __init__(self, layers, name=None, seed=10):
+    def __init__(self, layers, seed=10, N=1000):
        
         self.W = []  #Weights and biases
         self.parameters = 0 #total number of parameters
         self.loss_trace = []
         self.seed = seed
         self.layers = layers
+        self.N = N
+        X_f_train, X_u_train, u_train = trainingdata(N, sample=False)
+        self.X_f_train = X_f_train
+        self.X_u_train = X_u_train
+        self.u_train = u_train
         
         gen = tf.random.Generator.from_seed(seed=self.seed)
         for i in range(len(layers)-1):
@@ -87,50 +88,38 @@ class Sequentialmodel(tf.Module):
             std_dv = np.sqrt((2.0/(input_dim + output_dim)))
 
             #weights = normal distribution * Xavier standard deviation + 0
-            w = gen.normal([input_dim, output_dim], dtype = 'float64') * std_dv
-                       
+            w = gen.normal([input_dim, output_dim], dtype = 'float64') * std_dv                   
             w = tf.Variable(w, trainable=True, name = 'w' + str(i+1))
-
-            b = tf.Variable(tf.cast(tf.zeros([output_dim]), dtype = 'float64'), trainable = True, name = 'b' + str(i+1))
-                    
+            b = tf.Variable(tf.cast(tf.zeros([output_dim]), dtype = 'float64'), trainable = True, name = 'b' + str(i+1))    
             self.W.append(w)
             self.W.append(b)
-            
             self.parameters +=  input_dim * output_dim + output_dim
     
     def evaluate(self,x):
         ##normalize x so that x is in [0, 1]
-        x = (x-lb)/(ub-lb)
-        
+        x = (x-lb)/(ub-lb)     
         a = x
-        for i in range(len(self.layers)-2):
-            
+        for i in range(len(self.layers)-2):      
             z = tf.add(tf.matmul(a, self.W[2*i]), self.W[2*i+1])
-            a = tf.nn.tanh(z)
-            
+            a = tf.nn.tanh(z)     
         a = tf.add(tf.matmul(a, self.W[-2]), self.W[-1]) # For regression, no activation to last layer
         return a
-    
+
     #get the flattened weights and bias
     def get_weights(self):
-
-        parameters_1d = []  # [.... W_i,b_i.....  ] 1d array
-        
-        for i in range (len(self.layers)-1):
-            
+        parameters_1d = []  # [.... W_i,b_i.....  ] 1d array       
+        for i in range (len(self.layers)-1):          
             w_1d = tf.reshape(self.W[2*i],[-1])   #flatten weights 
             b_1d = tf.reshape(self.W[2*i+1],[-1]) #flatten biases
             
             parameters_1d = tf.concat([parameters_1d, w_1d], 0) #concat weights 
-            parameters_1d = tf.concat([parameters_1d, b_1d], 0) #concat biases
-        
+            parameters_1d = tf.concat([parameters_1d, b_1d], 0) #concat biases        
         return parameters_1d
         
     #parameters is falttened weights and bias
     def set_weights(self,parameters):
                 
         for i in range (len(self.layers)-1):
-
             shape_w = tf.shape(self.W[2*i]).numpy() # shape of the weight tensor
             size_w = tf.size(self.W[2*i]).numpy() #size of the weight tensor 
             
@@ -156,81 +145,57 @@ class Sequentialmodel(tf.Module):
 
     ##compute the loss of collocation points
     def loss_PDE(self, x_to_train_f):
-        g = tf.Variable(x_to_train_f, dtype = 'float64', trainable = False)
-    
-        nu = 0.01/np.pi
-
+        g = tf.Variable(x_to_train_f, dtype = 'float64', trainable = False)  
         x_f = g[:,0:1]
-
         with tf.GradientTape(persistent=True) as tape:
-
             tape.watch(x_f)
-
             z = self.evaluate(x_f)
             u_x = tape.gradient(z,x_f)
-
         u_xx = tape.gradient(u_x, x_f)
-
-        del tape
-        
-        source = 0
-        
+        del tape     
+        source = 0    
         for k in range(1,6):
-            source += (2*k) * np.sin(2*k*x_f) 
-            
+            source += (2*k) * np.sin(2*k*x_f)         
         ##f = u_xx + u
         f = u_xx + source
-
         loss_f = tf.reduce_mean(tf.square(f))
-
         return loss_f
     
     def loss(self,x,y,g, record = True):
-
         loss_u = self.loss_BC(x,y)
         loss_f = self.loss_PDE(g)
-
         loss = loss_u + loss_f
         if record:
             self.loss_trace.append(float(loss))
-
         return loss, loss_u, loss_f
     
     ##set the nn to the new parameters
     ##and compute and return the gradient of the nn w.r.t. parameters
-    def optimizerfunc(self,parameters):
-        
-        self.set_weights(parameters)
-       
+    def optimizerfunc(self,parameters):     
+        self.set_weights(parameters)    
         with tf.GradientTape() as tape:
-            tape.watch(self.trainable_variables)
+            tape.watch(self.trainable_variables)       
+            loss_val, loss_u, loss_f = self.loss(self.X_u_train, self.u_train, self.X_f_train, record=False)
             
-            loss_val, loss_u, loss_f = self.loss(X_u_train, u_train, X_f_train, record=False)
-            
-        grads = tape.gradient(loss_val,self.trainable_variables)
-                
-        del tape
-        
-        grads_1d = [ ] #flatten grads 
-        
+        grads = tape.gradient(loss_val,self.trainable_variables)          
+        del tape    
+        grads_1d = [ ] #flatten grads     
         for i in range (len(self.layers)-1):
-
             grads_w_1d = tf.reshape(grads[2*i],[-1]) #flatten weights 
             grads_b_1d = tf.reshape(grads[2*i+1],[-1]) #flatten biases
-
             grads_1d = tf.concat([grads_1d, grads_w_1d], 0) #concat grad_weights 
             grads_1d = tf.concat([grads_1d, grads_b_1d], 0) #concat grad_biases
-
         return loss_val.numpy(), grads_1d.numpy()
     
-    def optimizer_callback(self,parameters):
-               
-        loss_value, loss_u, loss_f = self.loss(X_u_train, u_train, X_f_train, record=True)
-        
+    def optimizer_callback(self,parameters):             
+        loss_value, loss_u, loss_f = self.loss(self.X_u_train, self.u_train, self.X_f_train, record=True)     
         u_pred = self.evaluate(X_u_test)       
         error_vec = np.linalg.norm((u-u_pred),2)/np.linalg.norm(u,2)      
         
-        tf.print(loss_value, loss_u, loss_f, error_vec)
+        tf.print("{}th iteration: total loss: {}, BC loss: {}, Colo loss: {}".format(
+            len(self.loss_trace), loss_value, loss_u, loss_f
+        ))
+
 
 
 ## Gradient Descent algorithms ======================
@@ -316,10 +281,10 @@ def GaussNewton(PINN, X_u_train, u_train, X_f_train, N, lr, n_iter, display=10):
 def Identity(x):
     return np.eye(481)
 
-def L2Kernel(PINN, alpha=1):
+def L2Kernel(PINN, alpha=0):
     def func(X):
         with tf.GradientTape(persistent=True) as tape:
-            prediction = PINN.evaluate(X_f_train)
+            prediction = PINN.evaluate(PINN.X_f_train)
         Jac = tape.jacobian(prediction, PINN.trainable_variables, experimental_use_pfor=False)
         Jacobian = tf.concat([tf.reshape(Jac[i],[1002, -1]) for i in range(len(Jac))],axis=1)
         numVars = Jacobian.shape[1]
@@ -330,9 +295,9 @@ def L2Kernel(PINN, alpha=1):
 
 ## Kernel Functions for H1, H-1, H1 semi, H-1 semi
 def Cn(N):
-    ones = np.ones(N);
-    diags = np.array([-1, 1]);
-    data = [-ones, ones];
+    ones = np.ones(N)
+    diags = np.array([-1, 1])
+    data = [-ones, ones]
     C = sp.spdiags(data, diags, N, N)
     dx = 2*np.pi/(N+1)
     C = (1/(2*dx))*C
