@@ -90,6 +90,52 @@ def trainingdata(N_f, sample=True):
 
 # PINN CLASS ===============================
 class Sequentialmodel(tf.Module): 
+    '''
+    This class models the PINN neural nework. It extends the tf.Module class
+
+    ...
+    Attributes
+    ----------
+    W : list
+        A list of tf.tensorflow objects that store the weights and biases of the PINN each each layer
+    parameters : int
+        Number of parameters in the PINN. Weights and biases. 
+    loss_trace : list
+        A list of floats that keep records of the total loss of the PINN during optimization iterations.
+    seed : int
+        The random seed used to generate the initial parameter values.
+    layers : numpy.ndarray
+        The shape of the PINN. For example, if the PINN has 2 input nodes and 2 hidden layers with 30 nodes and 1 output node, 
+        then layers should be np.array([2, 30, 30, 1]).
+    N : int
+        The number of data points in each dimension in the frame.
+    X_f_train : numpy.ndarray
+        The array of all N**2 data points including BC points and colocation points. 
+    X_u_train : numpy.ndarray
+        The array of all boundary data points. 
+    
+    Methods
+    -------
+    evaluate(x)
+        Input x to the PINN and returns the evaluation of the PINN on x
+    get_weights()
+        Get all parameters (weights and biases) as a 1d tf.tensor.
+    set_weights(parameters)
+        Set the parameters of the PINN (all weights and bias) according to intput parameters.
+    loss_BC(x,y)
+        Compute and return the loss_BC, the loss induced by the violation of the boundaty conditions.
+    loss_PDE(x_to_train_f)
+        Compute and return the loss_colocation. the loss induced by the colacation points.
+    loss(x,y,g, record = False)
+        Compute and return the total loss. Record the loss if record is true. 
+    optimizerfunc(parameters)
+        Set the parameters of the PINN by parameters. Compute and return the total loss and the gradient of loss function 
+        w.r.t. all parameters as a 1d numpy.ndarray.
+    optimizer_callback(parameters)
+        Call back function for optimizers. 
+    
+    '''
+
     def __init__(self, layers, seed=10, N=1000):
        
         self.W = []  #Weights and biases
