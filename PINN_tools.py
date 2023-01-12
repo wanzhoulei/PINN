@@ -137,6 +137,24 @@ class Sequentialmodel(tf.Module):
     '''
 
     def __init__(self, layers, seed=10, N=1000):
+        '''
+        Constructor for Sequentialmodel
+        All activation functions are tanh.
+        It sets all the attributes, constructs and stores the training data points
+        It also initialize the parameters of the PINN using the random seed input.
+        It uses Xavier normal distribution to generate the initial parameters.
+        
+        Parameters
+        ----------
+        layers : numpy.ndarray
+            1d numpy array that represents the shape of the PINN. For example, if the PINN has 
+            3 hidden layers, each of which has 30 nodes, then layers should be np.array([2, 30, 30, 30, 1])
+        seed : int, default=10
+            The random seed used to initialize the parameters of PINN
+        N : int, default=1000
+            Number of colocation points
+        
+        '''
        
         self.W = []  #Weights and biases
         self.parameters = 0 #total number of parameters
