@@ -266,6 +266,7 @@ class Sequentialmodel(tf.Module):
         '''
         This methods computes and returns boundary condition loss loss_BC of the current PINN.
         Given the training set and the boundary condition. 
+        loss_BC should be the MSE of the boundary values of the PINN and the truth boundary values.
 
         Parameters
         ----------
@@ -282,6 +283,23 @@ class Sequentialmodel(tf.Module):
 
     ##compute the loss of collocation points
     def loss_PDE(self, x_to_train_f):
+        '''
+        Computes and returns the colocation loss loss_f of the current PINN given inputs.
+        loss_f is the MSE of the Laplacian of the PINN and the true Laplacian of the truth function 
+        evaluated at colocation points.
+
+        Parameters
+        ----------
+        x_to_train_f : numpy.ndarray
+            1d numpy array of all the training data points, including the boundary and colocation points.
+
+        Returns
+        -------
+        loss_f : tensorflow.tensor
+            Scalar tensor object that is the colocation loss. 
+        
+        '''
+
         g = tf.Variable(x_to_train_f, dtype = 'float64', trainable = False)  
         x_f = g[:,0:1]
         with tf.GradientTape(persistent=True) as tape:
