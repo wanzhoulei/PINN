@@ -232,6 +232,16 @@ class Sequentialmodel(tf.Module):
         
     #parameters is falttened weights and bias
     def set_weights(self,parameters):
+        '''
+        This method sets the parameters of the PINN according to the input.
+
+        Parameters
+        ----------
+        parameters : numpy.ndarray
+            1d numpy array of all the flattened trainable parameters of the PINN including weights and biases. 
+            The order should be the same as in get_weights method, i.e. layer by layer and weights then biases.
+        
+        '''
                 
         for i in range (len(self.layers)-1):
             shape_w = tf.shape(self.W[2*i]).numpy() # shape of the weight tensor
