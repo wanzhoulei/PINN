@@ -317,6 +317,34 @@ class Sequentialmodel(tf.Module):
         return loss_f
     
     def loss(self,x,y,g, record = True):
+        '''
+        Computes and returns the total loss of the PINN, which is the sum of BC loss and colocation loss.
+        total_loss = loss_BC + loss_f
+
+        Parameters
+        ----------
+        x : numpy.ndarray
+            1d numpy array of all boundary points. In this case, it is np.array([-pi, pi])
+        y : numpy.ndarray
+            1d numpy array of boundary condition. The value of truth function at boundary points.
+            In this case, it is np.array([0, 0])
+        g : numpy.ndarray
+            1d numpy array of all data points.
+        record : bool, default=True
+            If set to True, the total loss will be appended to the self.loss_trace list.
+            If set to False, the loss will not be recorded.
+        
+        Returns
+        -------
+        loss : tensorflow.tensor
+            Scalor tensor, which is the total loss of PINN.
+        loss_u : tensorflow.tensor
+            Scalor tensor, which is the boundary loss of PINN.
+        loss_f : tensorflow.tensor
+            Scalor tensor, which is the colocation loss of PINN.
+        
+        '''
+
         loss_u = self.loss_BC(x,y)
         loss_f = self.loss_PDE(g)
         loss = loss_u + loss_f
