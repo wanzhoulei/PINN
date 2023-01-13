@@ -492,9 +492,38 @@ def plot_nn(loss, PINN, lr=None, figpath=None):
 #u_train values at boundary according to the boundary condition
 #it returns (Jacobian, Gradient, loss_value)
 def JacGrad(PINN, X_u_train, u_train, X_f_train):
+    '''
+    This methods computes and returns the Jacobian, Gradient, and total loss
+    Given all discretized training data points.
+    Let g be a vector function that maps all parameters of PINN to the evaluation of the PINN on all data points.
+    Suppose there are p parameters and N^2 data points, then g: R^p -> R^{N^2}
+    The Jacobian is the Jacobian of g w.r.t. all parameters and has shape (N^2, p)
+    Gradient is the gradient of loss w.r.t. all parameters
+
+    Parameters
+    ----------
+    PINN : Sequentialmodel
+        The PINN model to compute the jacobian on
+    X_u_train : numpy.ndarray
+        1d numpy array of all boundary points
+    u_train : numpy.ndarray
+        1d numpy array of the evaluation of truth function on boundary points
+    X_f_train : numpy.ndarray
+        1d numpy array of all discretized data points
+
+    Returns 
+    -------
+    Tuple 
+        A tuple (Jac, grad, loss_val) is returned
+        Jac is the tf.tensor of the Jacobian of PINN w.r.t. all parameters
+        grad is the tf.tensor of the gradient of loss w.r.t. all parameters
+        loss_val is the tf.tensor of the total loss of PINN
+ 
+    '''
+
     with tf.GradientTape(persistent=True) as tape:
         prediction = PINN.evaluate(X_f_train)
-        loss_val, loss_u, loss_f = PINN.loss(X_u_train, u_train, X_f_train)
+        loss_val, _, _ = PINN.loss(X_u_train, u_train, X_f_train)
     Jac = tape.jacobian(prediction, PINN.trainable_variables, experimental_use_pfor=False)
     grad = tape.gradient(loss_val, PINN.trainable_variables)
     return (Jac, grad, loss_val)
