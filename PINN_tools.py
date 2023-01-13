@@ -106,7 +106,7 @@ class Sequentialmodel(tf.Module):
         The random seed used to generate the initial parameter values.
     layers : numpy.ndarray
         The shape of the PINN. For example, if the PINN has 2 input nodes and 2 hidden layers with 30 nodes and 1 output node, 
-        then layers should be np.array([2, 30, 30, 1]).
+        then layers should be np.array([1, 30, 30, 1]).
     N : int
         The number of data points in each dimension in the frame.
     X_f_train : numpy.ndarray
@@ -185,6 +185,21 @@ class Sequentialmodel(tf.Module):
             self.parameters +=  input_dim * output_dim + output_dim
     
     def evaluate(self,x):
+        '''
+        This method evaluates the PINN on the given input x.
+        It imposes the neural network on each element in the input array x.
+
+        Parameters
+        ----------
+        x : numpy.ndarray
+            1d numpy array. Each element is one data point on which we want to evaluate the PINN.
+        
+        a : tensorflow.tensor 
+            A tensor of the same shape as x. Each element of a is the evaluation of the PINN on the 
+            corresponding data point.
+        
+        '''
+
         ##normalize x so that x is in [0, 1]
         x = (x-lb)/(ub-lb)     
         a = x
@@ -196,6 +211,16 @@ class Sequentialmodel(tf.Module):
 
     #get the flattened weights and bias
     def get_weights(self):
+        '''
+        This method gets and returns all the parameters of the PINN and returns as a tensorflow.tensor object
+
+        Returns
+        -------
+        tensorflow.tensor
+            1d tensorflow.tensor object that contains all the flattened trainable parameters, including the weights and biases. 
+        
+        '''
+
         parameters_1d = []  # [.... W_i,b_i.....  ] 1d array       
         for i in range (len(self.layers)-1):          
             w_1d = tf.reshape(self.W[2*i],[-1])   #flatten weights 
