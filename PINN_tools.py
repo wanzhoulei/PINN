@@ -354,7 +354,26 @@ class Sequentialmodel(tf.Module):
     
     ##set the nn to the new parameters
     ##and compute and return the gradient of the nn w.r.t. parameters
-    def optimizerfunc(self,parameters):     
+    def optimizerfunc(self,parameters):  
+        '''
+        Optimizer function that sets the new parameters and computes and returns
+        the loss and the gradient of loss w.r.t. all parameters
+
+        Parameters
+        ----------
+        parameters : numpy.ndarray
+            1d numpy array of all falattened tunable parameters of the PINN, including weights and biases
+            The order of parameters is important and should be the same as in set_weights method
+
+        Returns
+        -------
+        numpy.ndarray
+            The numpy array of one element, which is the total loss of the PINN after setting new parameters
+        numpy.ndarray
+            A 1d numpy array of the gradient of the loss function w.r.t. all parameters of PINN.
+        
+        '''   
+
         self.set_weights(parameters)    
         with tf.GradientTape() as tape:
             tape.watch(self.trainable_variables)       
