@@ -263,7 +263,20 @@ class Sequentialmodel(tf.Module):
     ##x should be the two boundary points
     ##y should be the value of the PDE at these two boundary points
     def loss_BC(self,x,y):
-        ##compute the MSE
+        '''
+        This methods computes and returns boundary condition loss loss_BC of the current PINN.
+        Given the training set and the boundary condition. 
+
+        Parameters
+        ----------
+        x : numpy.ndarray
+            1d numpy array of length 2. It should be the boundary points, in this case np.array([-pi, pi])
+        y : numpy.ndarray
+            1d numpy array of length 2. It should be the values of the truth function at boundary points. 
+            In this case, should be np.array([0, 0])
+        
+        '''
+
         loss_u = tf.reduce_mean(tf.square(y-self.evaluate(x)))
         return loss_u
 
