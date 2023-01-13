@@ -389,11 +389,20 @@ class Sequentialmodel(tf.Module):
             grads_1d = tf.concat([grads_1d, grads_b_1d], 0) #concat grad_biases
         return loss_val.numpy(), grads_1d.numpy()
     
-    def optimizer_callback(self,parameters):             
+    def optimizer_callback(self,parameters):    
+        '''
+        Optimizer callback function to be called after each optimization iteration
+        It computes the losses (total loss, loss_BC, loss_colocation)
+        and prints the number of iteration and these losses to the screen
+
+        Parameters
+        ----------
+        parameters : numpy.ndarray
+            1d numpy array of all parameters of PINN
+
+        '''         
+
         loss_value, loss_u, loss_f = self.loss(self.X_u_train, self.u_train, self.X_f_train, record=True)     
-        u_pred = self.evaluate(X_u_test)       
-        error_vec = np.linalg.norm((u-u_pred),2)/np.linalg.norm(u,2)      
-        
         tf.print("{}th iteration: total loss: {}, BC loss: {}, Colo loss: {}".format(
             len(self.loss_trace), loss_value, loss_u, loss_f
         ))
