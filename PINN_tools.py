@@ -411,6 +411,29 @@ class Sequentialmodel(tf.Module):
 
 ## Gradient Descent algorithms ======================
 def gradient_descent(PINN, initial, n_iter, lr, display_every=1):
+    '''
+    Method that performs n_iter iterations of gradient descent on the PINN given initial parameter states
+
+    Parameters
+    ----------
+    PINN : Sequentialmodel
+        A Sequentialmodel object of the PINN we want to do GD on.
+    initial : numpy.ndarray
+        1d numpy array of the initial parameters of PINN
+    n_iter : int
+        Number of iterations to perform
+    lr : float
+        step size of the gradient descent 
+    display_every : int, default=1
+        After every display_every iterations, the loss value will be printed
+
+    Returns
+    -------
+    loss_trace : list
+        A list of loss values of each GD iteration.
+    
+    '''
+
     loss, gradient = PINN.optimizerfunc(initial)
     loss_trace = [loss]
     for i in range(n_iter):
