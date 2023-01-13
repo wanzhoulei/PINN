@@ -446,6 +446,25 @@ def gradient_descent(PINN, initial, n_iter, lr, display_every=1):
 
 ##this function plots the loss trace of GD as well as the output of the trained NN
 def plot_nn(loss, PINN, lr=None, figpath=None):
+    '''
+    Plotting method that plots two subplots in one plot.
+    1. The loss trace of some optimization algorithm
+    2. The truth value of function and the PINN prediction in one subplot.
+
+    Parameters
+    ----------
+    loss : array-like
+        A 1d array of loss values through the optimization algorithm
+    PINN : Sequentialmodel
+        The PINN model we did the optimization on.
+    lr : float, default=None
+        The step size of the optimization algorithm
+    figpath : String, default=None
+        If set to None, the plot will not be saved.
+        If you wish to save the plot, set it to be the saving path.
+    
+    '''
+
     u_pred = PINN.evaluate(X_u_test)
     print("GD of lr={}, n_iter={}".format(lr, len(loss)))
     print("Train Loss: {}".format(loss[-1]))
