@@ -529,7 +529,28 @@ def JacGrad(PINN, X_u_train, u_train, X_f_train):
     return (Jac, grad, loss_val)
 
 #N is the number of data points
-def update_step(PINN, Jac, grad, N, lr):
+def update_step(PINN, Jac, grad, lr):
+    '''
+    update step for Gauss Newton method
+    It computes the descent direction for L2 natural gradient descent with 
+    a damping factor of 0.1
+    and then updates the descent step to the parameters
+
+    Parameters
+    ----------
+    PINN : Sequentialmodel
+        The PINN model to perform the Gauss Newton on
+    Jac : tensorflow.tensor
+        The jacobian of the PINN w.r.t. all parameters. Its shape is complex and contains 
+        one matrix for each weight and bias in every layer.
+    grad L tensorflow.tensor
+        The gradient of the loss w.r.t. all parameters. Its shape is complex. 
+        It contains weight matrix and bias matrix and is not flattened yet
+    lr : float
+        The fixed step size of Gauss Newton method.
+    
+    '''
+
     #flatten the gradient and construct the jacobian matrix
     numLayer = int(len(grad)/2) + 1
     grads_1d = [ ] #flatten grads     
@@ -549,14 +570,14 @@ def update_step(PINN, Jac, grad, N, lr):
     PINN.set_weights(new_params)
 
 #N: number of data points, lr: learning rate, n_iter: number of iterations
-def GaussNewton(PINN, X_u_train, u_train, X_f_train, N, lr, n_iter, display=10):
+def GaussNewton(PINN, X_u_train, u_train, X_f_train, lr, n_iter, display=10):
     loss_trace = []
     for i in range(n_iter):
         Jac, grad, loss_val = JacGrad(PINN, X_u_train, u_train, X_f_train)
         loss_trace.append(float(loss_val))
         if (i+1)%display==0:
             print("In {}th iteration, current loss: {}".format(i+1, loss_val))
-        update_step(PINN, Jac, grad, N, lr)
+        update_step(PINN, Jac, grad, lr)
     loss_trace.append(float(PINN.loss(X_u_train, u_train, X_f_train)[0]))
     return loss_trace
 
