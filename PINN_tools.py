@@ -571,6 +571,29 @@ def update_step(PINN, Jac, grad, lr):
 
 #N: number of data points, lr: learning rate, n_iter: number of iterations
 def GaussNewton(PINN, X_u_train, u_train, X_f_train, lr, n_iter, display=10):
+    '''
+    This method performs n_iter of fixed step size L2 natural gradient descent on the given PINN
+    starting with the initial parameters of the current parameters of given PINN
+
+    Parameters
+    ----------
+    PINN : Sequentialmodel
+        The PINN to perform L2 NGD on
+    X_u_train : numpy.ndarray
+        The array of boundary points
+    u_train : numpy.ndarray
+        The numpy array of values of the truth function evaluated at the boundary points
+    X_f_train : numpy.ndarray
+        The numpy array of all the data points
+    lr : float
+        The fixed step size.
+    n_iter : int
+        The number of iterations to perform
+    display : int, default=10
+        Display the loss message every display iteration
+    
+    '''
+
     loss_trace = []
     for i in range(n_iter):
         Jac, grad, loss_val = JacGrad(PINN, X_u_train, u_train, X_f_train)
