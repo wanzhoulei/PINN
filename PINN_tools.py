@@ -655,6 +655,24 @@ def L2Kernel(PINN, alpha=0):
 
 ## Kernel Functions for H1, H-1, H1 semi, H-1 semi
 def Cn(N):
+    '''
+    Constructs and returns discretized divergence operator matrix C. 
+    Suppose vector v is the evaluation of a 1d scalar function u at N colocation points.
+    Then, Cv is the gradient of u w.r.t. x evaluated a N colocation points. 
+    The gradient is computed using finite differentiation and it assumes zero boundary condition.
+
+    Parameters
+    ----------
+    N : int 
+        The number of colocation points in 1D.
+
+    Returns
+    -------
+    numpy.ndarray
+        A numpy array of shape (N, N) that is the discretized divergence operator matrix.
+    
+    '''
+
     ones = np.ones(N)
     diags = np.array([-1, 1])
     data = [-ones, ones]
