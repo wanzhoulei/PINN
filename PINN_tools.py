@@ -605,7 +605,20 @@ def GaussNewton(PINN, X_u_train, u_train, X_f_train, lr, n_iter, display=10):
     return loss_trace
 
 def Identity(x):
-    return np.eye(481)
+    '''
+    This method returns the identity matrix.
+    This is the utility function that should be used as the Hess in the Newton-cg framework
+    Such that standard gradient descent is performed
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        Should be the parameter arrays of the PINN with shape (numParameters, ).
+        In practise, we only need the shape to match the number of parameters. 
+    
+    '''
+    
+    return np.eye(x.shape[0])
 
 def L2Kernel(PINN, alpha=0):
     def func(X):
