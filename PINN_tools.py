@@ -786,6 +786,34 @@ def H1semiKernel(PINN, N, X_f_train, L, alpha=0):
     return func
 
 def HinvKernel(PINN, N, X_f_train, L, alpha=0):
+    '''
+    A decorator that returns a function that computes the H-1 kernel of the PINN.
+    Suppose the Jacobian of the evaluation of PINN on all grid data points w.r.t. all parameters is J,
+    then the H1 kernel is then alpha*In + J.T (In + L)^-1 J
+    where alpha is a damping factor and L is the negative laplacian matrix. 
+    More detailed description can be found in the documentation.ipynb file.
+
+    Parameters
+    ----------
+    PINN : Sequentialmodel
+        A PINN object on which to compute the H1 kernel
+    N : int
+        The number of colocation points in 1d. 
+    X_f_train : numpy.ndarray
+        1d numpy array of all grid data points including BC points and colocation points
+    L : numpy.ndarray
+        numpy matrix of shape (N+2, N+2) that is the negative divergence operator matrix.
+    alpha : float, default=0
+        The damping factor that adds to the kernel
+
+    Returns
+    -------
+    func : function 
+        A function that takes a required input, of which the content is not important, and returns the H-1 kernel matrix.
+        of the specified PINN and damping factor. It is only supposed to be used in the newton-cg optimization framework.
+
+    '''
+
     In = np.eye(N+2)
     LIninv = np.linalg.inv(In + L)
     def func(X):
