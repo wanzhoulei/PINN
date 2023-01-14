@@ -683,6 +683,24 @@ def Cn(N):
 
 # create a matrix of N+2 -by- N+2 , e.g., L
 def NegLaplacian(N):
+    '''
+    Constructs and returns the discretized negative laplacian matrix L.
+    L is of shape (N+2, N+2), where N+2 is the number of all data points.
+    If vector v is the evaluation of a 1d scalar function u evaluated at all N+2 data points, 
+    then Lv is the evaluation of negative laplacian of u at all data points: -u_xx
+
+    Parameters
+    ----------
+    N : int
+        The number of colocation points in 1D
+    
+    Returns 
+    -------
+    L : numpy.ndarray
+        Array of shape (N+2, N+2) that is the matrix of negative laplacian operator
+    
+    '''
+
     C = Cn(N)
     L = np.eye(N+2)
     L[1:-1, 1:-1] = C.T @ C
