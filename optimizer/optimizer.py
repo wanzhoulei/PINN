@@ -43,12 +43,20 @@ class MiniBatch:
     def __init__(self, X_f_train, X_u_train, u_train, BC_ratio, Interior_ratio):
         '''
         Constructor for MiniBatch
-        X_f_train: the entire train points
-        X_u_train: boundary points
-        u_train: value on the boundary points
-        BC_ratio: the ratio of boundary points to include in the mini batch
-        Interior_ratio: the ratio of the interior points to include in the mini batch
+
+        X_f_train : numpy.ndarray
+            the entire train points
+        X_u_train : numpy.ndarray
+            boundary points
+        u_train : numpy.ndarray
+            1d numpy array of values on the boundary points
+        BC_ratio: float
+            the ratio of boundary points to include in the mini batch
+        Interior_ratio: float
+            the ratio of the interior points to include in the mini batch
+
         '''
+
         self.X_f_train = X_f_train
         self.X_u_train = X_u_train
         self.u_train = u_train
