@@ -77,6 +77,23 @@ class MiniBatch:
 
     ##return a minibatch sample of specified ratio
     def sample(self):
+        '''
+        Sample method that constructs and returns a mini batch dataset. 
+        According to the given BC ratio and interior ratio.
+
+        Returns
+        -------
+        tuple
+            A tuple of length 6.
+            first element: 2d numpy array of the entire selected mini batch data points.
+            second element: 2d numpy array of the selected boundary points in the mini batch.
+            third element: 1d numpy array of the truth values of the selected boundary points in the mini batch.
+            forth element: 1d numpy array of the indices of the selected data points in the X_f_train array.
+            fifth element: 1d numpy array of the indices of the selected boundary points in the X_f_train array.
+            sixth element: 1d numpy array of the indices of the selected interior points in the X_f_train array.
+        
+        '''
+
         ##figure out the index
         BC_sample_index = np.random.choice(self.BC_index, self.BC_size, replace=False)
         BC_sample_index.sort()
@@ -95,6 +112,27 @@ class MiniBatch:
 ##this method does Stochastic Gradient Descent on the give PINN model
 ##it uses backtracking line search to do the GD
 def SGD_optimizer(PINN, lr, n_iter, BC_ratio=1, Interior_ratio=1):
+    '''
+    This methods performs stochastic gradient descent on a given PINN.
+    Instead of fixing the step size, this method uses backtracking line search to modify the step size.
+    Given a step size upperbound, the step size halves until the new loss is reduced. 
+    The method records the loss trace and cpu time in the PINN.loss_trace and PINN.clock attributes. 
+
+    Parameters
+    ----------
+    PINN : Sequentialmodel
+        The PINN model on which to perform the SGD.
+    lr : float
+        The upperbound for the step size.
+    n_iter : int
+        The number of iteratons of SGD to perform.
+    BC_ratio : float, default=1
+        The ratio of boundary points to include in each mini batch.
+    Interior_ratio : float, default=1
+        The ratio of interior data points to include in each mini batch 
+    
+    '''
+
     ##construct the minibatch object
     minibatch = MiniBatch(PINN.X_f_train, PINN.X_u_train, PINN.u_train, BC_ratio, Interior_ratio)
     ##append the initial loss to the loss_trace list
