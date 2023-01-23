@@ -179,7 +179,32 @@ def SGD_optimizer(PINN, lr, n_iter, BC_ratio=1, Interior_ratio=1):
 
 ##it uses backtracking line search 
 def L2_optimizer(PINN, lr, n_iter, BC_ratio=1, Interior_ratio=1, alpha=0):
-     ##construct the minibatch object
+    '''
+    This methods performs stochastic L2 natural gradient descent on a given PINN.
+    Instead of fixing the step size, this method uses backtracking line search to modify the step size.
+    Given a step size upperbound, the step size halves until the new loss is reduced. 
+    The method records the loss trace and cpu time in the PINN.loss_trace and PINN.clock attributes. 
+
+    Parameters
+    ----------
+    PINN : Sequentialmodel
+        The PINN model on which to perform the algorithm.
+    lr : float
+        The upperbound for the step size.
+    n_iter : int
+        The number of iteratons to perform.
+    BC_ratio : float, default=1
+        The ratio of boundary points to include in each mini batch.
+    Interior_ratio : float, default=1
+        The ratio of interior data points to include in each mini batch 
+    alpha : float, default=0
+        The damping factor to add in the L2 kernel.
+        It is recommended to set a non-zero value when the number of data points in the mini batch 
+        is less then the number of parameters. 
+    
+    '''
+
+    ##construct the minibatch object
     minibatch = MiniBatch(PINN.X_f_train, PINN.X_u_train, PINN.u_train, BC_ratio, Interior_ratio)
     ##append the initial loss to the loss_trace list
     init_loss, init_u, init_f = PINN.loss(PINN.X_u_train, PINN.u_train, PINN.X_f_train, record=True)
