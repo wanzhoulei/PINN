@@ -3,6 +3,43 @@ import numpy as np
 import tensorflow as tf
 
 class MiniBatch:
+    '''
+    MiniBatch utility object class. 
+
+    ...
+    Attributes
+    ----------
+    X_f_train : numpy.ndarray
+        numpy 2d array of size (N^2, 2), where N is the number of data points in each dimension.
+        It is the entire discretized data points. 
+    X_u_train : numpy.ndarray
+        numpy 2d array of size (4N-4, 2), where N is the number of data points in each dimension.
+        It is the boundary data points. 
+    u_train : numpy.ndarray
+        numpy 1d array of size (4N-4,), where N is the number of  data points in each dimension.
+        It is the boundary condition, the truth value of the function on the boundary data points. 
+    BC_ratio : float
+        The percentage of the boundary points to include in the mini batch.
+    Interior_ratio : float
+        The percentage of the interior data points to include in the mini batch.
+    BC_size : int
+        The number of boundary points to include in the mini batch
+    Interior_size : int
+        The number of interior points to include in the mini batch
+    BC_index : numpy.ndarray
+        Numpy 1d array of the indices of boundary points in the X_f_train array.
+    Interior_index : numpy.ndarray
+        Numpy 1d array of the indices of interior points in the X_f_train array.
+    N : int
+        The number of data points in each dimension.
+
+    Methods
+    -------
+    sample()
+        Constructs and returns a randomly generated mini batch of dataset given the BC_ratio and interior_ratio.
+    
+    '''
+
     def __init__(self, X_f_train, X_u_train, u_train, BC_ratio, Interior_ratio):
         '''
         Constructor for MiniBatch
@@ -461,7 +498,6 @@ def FR_optimizer(PINN, lr, n_iter, BC_ratio=1, Interior_ratio=1, alpha=0):
 def W2_optimizer(PINN, lr, n_iter, C, BC_ratio=1, Interior_ratio=1, alpha=0):
      ##construct the minibatch object
     minibatch = MiniBatch(PINN.X_f_train, PINN.X_u_train, PINN.u_train, BC_ratio, Interior_ratio)
-    N = int(PINN.X_f_train.shape[0]**0.5)
     ##append the initial loss to the loss_trace list
     init_loss, init_u, init_f = PINN.loss(PINN.X_u_train, PINN.u_train, PINN.X_f_train, record=True)
     tf.print('Initial total loss: {}, COLO: {}, BC: {}'.format(init_loss, init_u, init_f))
